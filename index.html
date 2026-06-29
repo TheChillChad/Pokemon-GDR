@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokémon GDR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #101820; --panel: #183050; --panel2: #1a2a40; --border: #4888c8;
+  --border-light: #78b8f0; --white: #e8f0f8; --yellow: #f8d030;
+  --red: #e83030; --green: #38c838; --green-mid: #f8a800; --gray: #607890;
+  --shadow: #080c10; --font: 'Press Start 2P', monospace;
+}
+body { font-family: var(--font); background: var(--bg); color: var(--white); min-height: 100vh; font-size: 8px; }
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--shadow); } ::-webkit-scrollbar-thumb { background: var(--border); }
+/* BUTTONS */
+.gba-btn { background: var(--panel); border: 2px solid var(--border); color: var(--yellow); font-family: var(--font); font-size: 7px; padding: 8px 12px; cursor: pointer; transition: background 0.1s; }
+.gba-btn:hover { background: var(--border); color: var(--shadow); }
+.gba-btn.green { border-color: var(--green); color: var(--green); }
+.gba-btn.green:hover { background: var(--green); color: var(--shadow); }
+.gba-btn.red { border-color: var(--red); color: var(--red); }
+.gba-btn.red:hover { background: var(--red); color: white; }
+.gba-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* INPUTS */
+.gba-input { background: var(--panel); border: 2px solid var(--border); color: var(--white); font-family: var(--font); font-size: 7px; padding: 8px 10px; outline: none; width: 100%; }
+.gba-input:focus { border-color: var(--border-light); }
+.gba-input::placeholder { color: var(--gray); }
+.gba-select { background: var(--panel); border: 2px solid var(--border); color: var(--white); font-family: var(--font); font-size: 7px; padding: 8px 10px; outline: none; width: 100%; }
+/* DIALOG */
+.dialog-box { border: 3px solid var(--border-light); background: var(--panel); padding: 10px 12px; position: relative; }
+.dialog-box::before { content: ''; position: absolute; inset: 2px; border: 1px solid var(--border); pointer-events: none; }
+.dialog-author { font-size: 7px; margin-bottom: 6px; letter-spacing: 1px; }
+.dialog-text { font-size: 7px; color: var(--white); line-height: 2.2; white-space: pre-wrap; word-break: break-word; }
+.dialog-time { font-size: 6px; color: var(--gray); margin-top: 5px; }
+.dialog-arrow { position: absolute; bottom: 6px; right: 10px; color: var(--yellow); font-size: 8px; animation: bounce 0.8s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(2px)} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+/* TYPE BADGES */
+.type-badge { font-size: 6px; padding: 2px 5px; border: 1px solid; display: inline-block; }
+.t-fuoco,.t-fire { color:#f87848;border-color:#f87848; }
+.t-acqua,.t-water { color:#78a8f8;border-color:#78a8f8; }
+.t-erba,.t-grass { color:#78c850;border-color:#78c850; }
+.t-elettro,.t-electric { color:#f8d030;border-color:#f8d030; }
+.t-normale,.t-normal { color:#a8a878;border-color:#a8a878; }
+.t-psico,.t-psychic { color:#f85888;border-color:#f85888; }
+.t-roccia,.t-rock { color:#b8a038;border-color:#b8a038; }
+.t-spettro,.t-ghost { color:#705898;border-color:#705898; }
+.t-lotta,.t-fighting { color:#c03028;border-color:#c03028; }
+.t-veleno,.t-poison { color:#a040a0;border-color:#a040a0; }
+.t-terra,.t-ground { color:#e0c068;border-color:#e0c068; }
+.t-volante,.t-flying { color:#a890f0;border-color:#a890f0; }
+.t-ghiaccio,.t-ice { color:#98d8d8;border-color:#98d8d8; }
+.t-drago,.t-dragon { color:#7038f8;border-color:#7038f8; }
+
+/* ===== LOBBY ===== */
+#screen-lobby { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:2rem; gap:1rem; }
+.lobby-logo { font-size:40px; text-align:center; }
+.lobby-title { font-size:11px; color:var(--yellow); letter-spacing:2px; text-align:center; }
+.lobby-sub { font-size:7px; color:var(--gray); text-align:center; margin-bottom:0.5rem; }
+.lobby-card { background:var(--panel); border:3px solid var(--border); padding:1.5rem; width:100%; max-width:360px; display:flex; flex-direction:column; gap:0.8rem; }
+.lobby-card h2 { font-size:8px; color:var(--border-light); letter-spacing:1px; margin-bottom:4px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label { font-size:6px; color:var(--gray); letter-spacing:1px; text-transform:uppercase; }
+.step-dots { display:flex; gap:6px; justify-content:center; margin-bottom:6px; }
+.step-dot { width:8px; height:8px; background:var(--panel2); border:1px solid var(--border); }
+.step-dot.active { background:var(--yellow); border-color:var(--yellow); }
+.error-box { font-size:7px; color:var(--red); background:rgba(232,48,48,0.1); border:1px solid var(--red); padding:6px 8px; }
+/* POKEMON SELECTOR */
+.poke-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.poke-opt { border:2px solid var(--border); background:var(--panel2); padding:8px 4px; text-align:center; cursor:pointer; transition:all 0.1s; }
+.poke-opt:hover { border-color:var(--border-light); }
+.poke-opt.selected { border-color:var(--yellow); background:rgba(248,208,48,0.1); }
+.poke-opt img { width:48px; height:48px; image-rendering:pixelated; display:block; margin:0 auto 4px; }
+.poke-opt .pname { font-size:6px; color:var(--white); }
+.poke-opt .ptype { font-size:5px; color:var(--gray); margin-top:2px; }
+
+/* ===== GAME ===== */
+#screen-game { display:none; flex-direction:column; height:100vh; }
+.topbar { background:var(--shadow); border-bottom:2px solid var(--border); padding:0 12px; height:40px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.topbar-title { font-size:9px; color:var(--yellow); letter-spacing:1px; }
+.room-pill { background:var(--panel); border:2px solid var(--border); padding:3px 8px; font-size:7px; color:var(--border-light); cursor:pointer; }
+.room-pill:hover { border-color:var(--border-light); }
+.online-row { display:flex; align-items:center; gap:6px; font-size:7px; color:var(--gray); }
+.dot-green { width:6px; height:6px; background:var(--green); display:inline-block; animation:blink 2s infinite; }
+.game-body { display:flex; flex:1; overflow:hidden; }
+/* FEED */
+.feed-col { flex:1; display:flex; flex-direction:column; border-right:2px solid var(--border); min-width:0; }
+.feed-header { background:var(--panel); border-bottom:2px solid var(--border); padding:6px 10px; font-size:7px; color:var(--border-light); letter-spacing:1px; flex-shrink:0; }
+.feed-scroll { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+.action-bar { border-top:2px solid var(--border); background:var(--shadow); padding:8px 10px; display:flex; gap:6px; align-items:center; flex-shrink:0; }
+.action-input { flex:1; padding:8px 10px; }
+/* SIDEBAR */
+.sidebar { width:240px; flex-shrink:0; background:var(--shadow); display:flex; flex-direction:column; overflow:hidden; }
+.sidebar-block { border-bottom:2px solid var(--border); }
+.sidebar-title { background:var(--panel); padding:6px 10px; font-size:7px; color:var(--border-light); letter-spacing:1px; border-bottom:1px solid var(--border); }
+/* PLAYER CARD */
+.player-card { padding:8px 10px; border-bottom:1px solid var(--panel2); }
+.player-name-row { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.player-avatar { width:22px; height:22px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; border:2px solid var(--border-light); flex-shrink:0; }
+.player-name { font-size:7px; color:var(--yellow); }
+.you-tag { font-size:6px; color:var(--green); border:1px solid var(--green); padding:1px 3px; margin-left:4px; }
+.player-class-row { font-size:6px; color:var(--gray); margin-top:1px; }
+.poke-display { display:flex; align-items:center; gap:8px; }
+.sprite-box { width:44px; height:44px; background:var(--panel); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.sprite-box img { width:40px; height:40px; image-rendering:pixelated; }
+.poke-info { flex:1; min-width:0; }
+.poke-name-row { font-size:7px; color:var(--white); margin-bottom:3px; }
+.poke-lv { font-size:6px; color:var(--gray); margin-bottom:4px; }
+.hp-label-row { display:flex; justify-content:space-between; font-size:6px; margin-bottom:2px; }
+.hp-label-row .hp-lbl { color:var(--border-light); }
+.hp-label-row .hp-val { color:var(--gray); }
+.hp-track { height:6px; background:var(--shadow); border:1px solid var(--border); }
+.hp-fill { height:100%; transition:width 0.4s, background 0.4s; }
+/* TABS */
+.sidebar-tabs { display:flex; flex-shrink:0; }
+.stab { flex:1; padding:6px 2px; font-size:6px; text-align:center; cursor:pointer; background:var(--shadow); color:var(--gray); border-right:1px solid var(--border); border-bottom:2px solid var(--border); transition:all 0.1s; }
+.stab:last-child { border-right:none; }
+.stab.active { background:var(--panel); color:var(--yellow); border-bottom-color:var(--panel); }
+.stab-content { display:none; overflow-y:auto; flex:1; }
+.stab-content.active { display:flex; flex-direction:column; }
+/* MOSSE */
+.moves-header { padding:6px 8px; font-size:6px; color:var(--gray); flex-shrink:0; }
+.moves-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px 8px 8px; }
+.move-btn { background:var(--panel2); border:2px solid var(--border); color:var(--white); font-family:var(--font); font-size:6px; padding:6px 4px; cursor:pointer; text-align:left; line-height:1.9; transition:all 0.1s; }
+.move-btn:hover { background:var(--border); color:var(--shadow); }
+.move-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.move-type-label { font-size:5px; display:block; }
+.move-pp { font-size:5px; color:var(--gray); display:block; }
+.move-result { font-size:7px; color:var(--yellow); text-align:center; padding:8px; min-height:28px; flex-shrink:0; border-top:1px solid var(--panel2); }
+/* DADI */
+.dice-section { padding:8px; }
+.dice-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+.die-btn { background:var(--panel2); border:2px solid var(--border); color:var(--border-light); font-family:var(--font); font-size:7px; padding:8px 2px; cursor:pointer; text-align:center; transition:all 0.1s; }
+.die-btn:hover { background:var(--border); color:var(--shadow); }
+.dice-result { font-size:8px; color:var(--yellow); text-align:center; padding:8px; min-height:28px; }
+/* ZAINO */
+.inv-item { display:flex; align-items:center; gap:6px; padding:6px 10px; border-bottom:1px solid var(--panel2); font-size:6px; color:var(--white); }
+.inv-icon { font-size:14px; flex-shrink:0; }
+.inv-qty { color:var(--yellow); margin-left:auto; }
+.inv-use-btn { font-size:5px; padding:2px 5px; margin-left:6px; }
+/* WIKI */
+.wiki-search { padding:8px; flex-shrink:0; border-bottom:1px solid var(--panel2); }
+.wiki-results { flex:1; overflow-y:auto; }
+.wiki-item { padding:8px 10px; border-bottom:1px solid var(--panel2); cursor:pointer; display:flex; align-items:center; gap:8px; }
+.wiki-item:hover { background:var(--panel2); }
+.wiki-item img { width:32px; height:32px; image-rendering:pixelated; }
+.wiki-item-info { flex:1; }
+.wiki-item-name { font-size:7px; color:var(--yellow); margin-bottom:3px; }
+.wiki-item-type { font-size:6px; color:var(--gray); }
+.wiki-detail { padding:10px; flex:1; overflow-y:auto; }
+.wiki-back { font-size:6px; color:var(--border-light); cursor:pointer; margin-bottom:8px; display:inline-block; }
+.wiki-back:hover { color:var(--yellow); }
+.wiki-poke-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.wiki-poke-header img { width:64px; height:64px; image-rendering:pixelated; }
+.wiki-poke-name { font-size:10px; color:var(--yellow); margin-bottom:4px; }
+.wiki-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin:8px 0; }
+.wiki-stat { background:var(--panel2); border:1px solid var(--border); padding:4px 6px; }
+.wiki-stat-label { font-size:5px; color:var(--gray); margin-bottom:2px; }
+.wiki-stat-val { font-size:8px; color:var(--white); }
+.wiki-desc { font-size:6px; color:var(--gray); line-height:2.2; margin-top:8px; }
+.wiki-moves-title { font-size:7px; color:var(--border-light); margin:10px 0 6px; }
+.wiki-move-row { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--panel2); font-size:6px; }
+/* OVERLAY/MODAL */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:100; display:none; }
+.overlay.show { display:flex; }
+.modal { background:var(--panel); border:3px solid var(--border-light); padding:1.2rem; width:90%; max-width:340px; max-height:80vh; overflow-y:auto; }
+.modal h2 { font-size:8px; color:var(--yellow); margin-bottom:1rem; letter-spacing:1px; }
+.modal-close { float:right; font-size:6px; cursor:pointer; color:var(--gray); }
+.modal-close:hover { color:var(--red); }
+/* HP EDIT */
+.hp-edit { display:flex; align-items:center; gap:6px; margin-top:4px; }
+.hp-edit-btn { width:24px; height:24px; font-size:12px; display:flex; align-items:center; justify-content:center; padding:0; }
+.hp-edit-val { font-size:9px; color:var(--yellow); min-width:30px; text-align:center; }
+/* TOAST */
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--panel); border:2px solid var(--green); color:var(--green); padding:8px 16px; font-size:7px; z-index:200; opacity:0; transition:opacity 0.2s; pointer-events:none; }
+.toast.show { opacity:1; }
+/* LOADING */
+.loading-screen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; z-index:300; }
+.loading-title { font-size:10px; color:var(--yellow); }
+.loading-sub { font-size:7px; color:var(--gray); animation:blink 1s infinite; }
+/* BATTLE INDICATOR */
+.battle-bar { background:rgba(232,48,48,0.15); border:2px solid var(--red); padding:6px 10px; margin:6px 10px; font-size:6px; color:var(--red); display:flex; justify-content:space-between; align-items:center; }
+.turn-indicator { font-size:6px; color:var(--green); padding:4px 10px; }
+/* GUIDA */
+.guide-section { padding:8px 10px; border-bottom:1px solid var(--panel2); }
+.guide-title { font-size:7px; color:var(--yellow); margin-bottom:6px; }
+.guide-text { font-size:6px; color:var(--gray); line-height:2.2; }
+.guide-highlight { color:var(--border-light); }
+
+@media (max-width:600px) {
+  .sidebar { width:180px; }
+  .moves-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loading-screen">
+  <div style="font-size:40px">⬛</div>
+  <div class="loading-title">POKEMON GDR</div>
+  <div class="loading-sub">CONNESSIONE IN CORSO...</div>
+</div>
+
+<!-- LOBBY -->
+<div id="screen-lobby" style="display:none">
+  <div class="lobby-logo">🎮</div>
+  <div class="lobby-title">POKEMON GDR</div>
+  <div class="lobby-sub">CAMPAGNA MULTIPLAYER — MAX 6 GIOCATORI</div>
+
+  <!-- STEP 1: NOME + STANZA -->
+  <div class="lobby-card" id="step1">
+    <div class="step-dots">
+      <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <h2>▶ ENTRA O CREA STANZA</h2>
+    <div class="field"><label>IL TUO NOME</label><input class="gba-input" id="inp-name" placeholder="Es. MARCO" maxlength="16"/></div>
+    <div class="field"><label>CODICE STANZA (vuoto = nuova)</label><input class="gba-input" id="inp-room" placeholder="Es. PKM4X2" maxlength="8" style="text-transform:uppercase"/></div>
+    <div class="error-box" id="err1" style="display:none"></div>
+    <button class="gba-btn green" onclick="goStep2()">CONTINUA ▶</button>
+  </div>
+
+  <!-- STEP 2: ALLENATORE -->
+  <div class="lobby-card" id="step2" style="display:none">
+    <div class="step-dots">
+      <div class="step-dot"></div><div class="step-dot active"></div><div class="step-dot"></div>
+    </div>
+    <h2>▶ IL TUO ALLENATORE</h2>
+    <div class="field"><label>CLASSE</label>
+      <select class="gba-select" id="inp-class">
+        <option value="Allenatore">🎒 ALLENATORE</option>
+        <option value="Coordinatore">🌟 COORDINATORE</option>
+        <option value="Ricercatore">🔬 RICERCATORE</option>
+        <option value="Ranger">🌿 RANGER</option>
+        <option value="Medico">💊 MEDICO POKEMON</option>
+      </select>
+    </div>
+    <div class="field"><label>ETÀ</label><input class="gba-input" id="inp-age" type="number" min="10" max="99" value="16" style="width:80px"/></div>
+    <button class="gba-btn green" onclick="goStep3()">SCEGLI POKEMON ▶</button>
+  </div>
+
+  <!-- STEP 3: POKEMON -->
+  <div class="lobby-card" id="step3" style="display:none">
+    <div class="step-dots">
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot active"></div>
+    </div>
+    <h2>▶ SCEGLI IL TUO POKEMON</h2>
+    <div class="poke-grid" id="poke-selector"></div>
+    <div class="error-box" id="err3" style="display:none">SELEZIONA UN POKEMON!</div>
+    <button class="gba-btn green" onclick="enterGame()">ENTRA NELLA STANZA ▶</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:9px;color:var(--yellow)">⬛ POKEMON GDR</span>
+      <span class="room-pill" id="room-display" onclick="copyRoom()">STANZA: ----</span>
+    </div>
+    <div class="online-row">
+      <span class="dot-green"></span>
+      <span id="online-count">-- ONLINE</span>
+      <button class="gba-btn red" style="padding:4px 8px;font-size:6px" onclick="leaveGame()">ESCI</button>
+    </div>
+  </div>
+
+  <div class="game-body">
+    <!-- FEED -->
+    <div class="feed-col">
+      <div class="feed-header">▶ NARRAZIONE — <span id="feed-session" style="color:var(--gray);font-size:6px"></span></div>
+      <div class="feed-scroll" id="feed"></div>
+      <div class="action-bar">
+        <input class="gba-input action-input" id="action-input" placeholder="Descrivi la tua azione..." maxlength="300" onkeydown="if(event.key==='Enter')sendAction()"/>
+        <button class="gba-btn" onclick="sendAction()">INVIA ▶</button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- GIOCATORI -->
+      <div class="sidebar-block" id="players-block">
+        <div class="sidebar-title">▶ GIOCATORI <span id="player-count" style="color:var(--gray);font-weight:normal"></span></div>
+        <div id="players-list"></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="sidebar-tabs">
+        <div class="stab active" onclick="setTab('mosse',this)">MOSSE</div>
+        <div class="stab" onclick="setTab('dado',this)">DADO</div>
+        <div class="stab" onclick="setTab('zaino',this)">ZAINO</div>
+        <div class="stab" onclick="setTab('wiki',this)">WIKI</div>
+        <div class="stab" onclick="setTab('guida',this)">?</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <!-- MOSSE -->
+        <div class="stab-content active" id="tab-mosse">
+          <div class="moves-header" id="moves-header">LE TUE MOSSE</div>
+          <div class="moves-grid" id="moves-grid"></div>
+          <div class="move-result" id="move-result"></div>
+        </div>
+        <!-- DADO -->
+        <div class="stab-content" id="tab-dado">
+          <div class="dice-section">
+            <div style="font-size:6px;color:var(--gray);margin-bottom:8px">LANCIA UN DADO — RISULTATO VISIBILE A TUTTI</div>
+            <div class="dice-grid">
+              <button class="die-btn" onclick="rollDie(4)">D4</button>
+              <button class="die-btn" onclick="rollDie(6)">D6</button>
+              <button class="die-btn" onclick="rollDie(8)">D8</button>
+              <button class="die-btn" onclick="rollDie(10)">D10</button>
+              <button class="die-btn" onclick="rollDie(12)">D12</button>
+              <button class="die-btn" onclick="rollDie(20)">D20</button>
+            </div>
+            <div class="dice-result" id="dice-result">—</div>
+            <div style="margin-top:8px;font-size:6px;color:var(--gray)">POOL D6 (POKEROLE)</div>
+            <div style="display:flex;gap:4px;margin-top:6px;align-items:center">
+              <input class="gba-input" id="pool-count" type="number" min="1" max="10" value="3" style="width:50px"/>
+              <button class="gba-btn" style="flex:1" onclick="rollPool()">LANCIA POOL ▶</button>
+            </div>
+            <div class="dice-result" id="pool-result"></div>
+          </div>
+        </div>
+        <!-- ZAINO -->
+        <div class="stab-content" id="tab-zaino">
+          <div id="inv-list"></div>
+          <div style="padding:8px;border-top:1px solid var(--panel2);flex-shrink:0">
+            <div style="font-size:6px;color:var(--gray);margin-bottom:6px">AGGIUNGI OGGETTO</div>
+            <div style="display:flex;gap:4px">
+              <input class="gba-input" id="inv-add-name" placeholder="Nome oggetto" style="flex:1"/>
+              <input class="gba-input" id="inv-add-qty" type="number" min="1" value="1" style="width:40px"/>
+              <button class="gba-btn" onclick="addInvItem()">+</button>
+            </div>
+          </div>
+        </div>
+        <!-- WIKI -->
+        <div class="stab-content" id="tab-wiki">
+          <div id="wiki-main">
+            <div class="wiki-search">
+              <input class="gba-input" id="wiki-search-inp" placeholder="CERCA POKEMON..." oninput="wikiSearch(this.value)"/>
+            </div>
+            <div class="wiki-results" id="wiki-results"></div>
+          </div>
+          <div id="wiki-detail-view" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+            <div class="wiki-detail" id="wiki-detail-content"></div>
+          </div>
+        </div>
+        <!-- GUIDA -->
+        <div class="stab-content" id="tab-guida">
+          <div style="overflow-y:auto;flex:1">
+            <div class="guide-section">
+              <div class="guide-title">▶ COME SI GIOCA</div>
+              <div class="guide-text">Scrivi le tue azioni nel campo in basso. Il <span class="guide-highlight">MASTER</span> risponde nella narrazione. I dadi determinano il successo delle azioni.</div>
+            </div>
+            <div class="guide-section">
+              <div class="guide-title">▶ I DADI (POKEROLE)</div>
+              <div class="guide-text">Si usano pool di <span class="guide-highlight">D6</span>. Ogni dado che esce <span class="guide-highlight">4 o più</span> = 1 SUCCESSO. Più successi = risultato migliore. 0 successi = fallimento.</div>
+            </div>
+            <div class="guide-section">
+              <div class="guide-title">▶ COMBATTIMENTO</div>
+              <div class="guide-text">1. Il Master dichiara l'incontro<br/>2. Si tira <span class="guide-highlight">iniziativa</span> (Destrezza D6)<br/>3. A turno si usa una mossa<br/>4. Clicca la mossa → i dadi si lanciano automatici<br/>5. Il Master narra il risultato</div>
+            </div>
+            <div class="guide-section">
+              <div class="guide-title">▶ TIPI (EFFICACIA)</div>
+              <div class="guide-text"><span class="guide-highlight">SUPER EFFICACE</span> = +1 dado al pool<br/><span class="guide-highlight">NON MOLTO EFF.</span> = -1 dado al pool<br/><span class="guide-highlight">IMMUNE</span> = nessun danno</div>
+            </div>
+            <div class="guide-section">
+              <div class="guide-title">▶ PUNTI VOLONTÀ</div>
+              <div class="guide-text">Ogni Pokemon ha <span class="guide-highlight">PV</span> (Punti Volontà). Le mosse potenti li consumano. Si recuperano riposando o con oggetti.</div>
+            </div>
+            <div class="guide-section">
+              <div class="guide-title">▶ STATI ALTERATI</div>
+              <div class="guide-text"><span class="guide-highlight">PARALISI</span>: -1 dado Velocità<br/><span class="guide-highlight">SONNO</span>: skip turno (tiro sveglia)<br/><span class="guide-highlight">VELENO</span>: -1 PS a fine turno<br/><span class="guide-highlight">CONFUSIONE</span>: 50% colpisci te stesso<br/><span class="guide-highlight">BRUCIATURA</span>: -1 PS, -1 dado ATK fisico</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HP EDIT -->
+<div class="overlay" id="modal-hp">
+  <div class="modal">
+    <div class="modal-close" onclick="closeModal('modal-hp')">✕ CHIUDI</div>
+    <h2>MODIFICA PS</h2>
+    <div style="font-size:7px;color:var(--gray);margin-bottom:1rem" id="hp-modal-poke"></div>
+    <div class="hp-edit">
+      <button class="gba-btn red hp-edit-btn" onclick="changeHp(-10)">-10</button>
+      <button class="gba-btn red hp-edit-btn" onclick="changeHp(-5)">-5</button>
+      <button class="gba-btn red hp-edit-btn" onclick="changeHp(-1)">-1</button>
+      <div class="hp-edit-val" id="hp-edit-val">--</div>
+      <button class="gba-btn green hp-edit-btn" onclick="changeHp(1)">+1</button>
+      <button class="gba-btn green hp-edit-btn" onclick="changeHp(5)">+5</button>
+      <button class="gba-btn green hp-edit-btn" onclick="changeHp(10)">+10</button>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:6px">
+      <button class="gba-btn green" style="flex:1" onclick="saveHp()">SALVA ▶</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCW8eKl58m_jW0XIoJE68A1j0LZLUavRGI",
+  authDomain: "pokemon-gdr.firebaseapp.com",
+  databaseURL: "https://pokemon-gdr-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "pokemon-gdr",
+  storageBucket: "pokemon-gdr.firebasestorage.app",
+  messagingSenderId: "511509654304",
+  appId: "1:511509654304:web:60843b05e7b50d2d010545"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+window._db = db;
+window._ref = ref;
+window._set = set;
+window._get = get;
+window._onValue = onValue;
+window._push = push;
+window._update = update;
+
+document.getElementById('loading-screen').style.display = 'none';
+document.getElementById('screen-lobby').style.display = 'flex';
+</script>
+
+<script>
+// ===== DATA =====
+const POKEMON_LIST = [
+  { id:1,  name:'BULBASAUR',  type:'Erba/Veleno', types:['erba','veleno'], hp:45, atk:49, satk:65, def:49, sdef:65, spd:45, moves:['FOGLIA LAMA','ASSORBIMENTO','CRESCITA','COLPO CORPO'] },
+  { id:4,  name:'CHARMANDER', type:'Fuoco',        types:['fuoco'],         hp:39, atk:52, satk:60, def:43, sdef:50, spd:65, moves:['BRACE','GRAFFIO','RUGGITO','FOCALENERGIA'] },
+  { id:7,  name:'SQUIRTLE',   type:'Acqua',        types:['acqua'],         hp:44, atk:48, satk:50, def:65, sdef:64, spd:43, moves:['PISTOLACQUA','COLPO CORPO','RIPARO','CODA COLPO'] },
+  { id:25, name:'PIKACHU',    type:'Elettro',      types:['elettro'],       hp:35, atk:55, satk:50, def:30, sdef:40, spd:90, moves:['TUONO','FULMINE','AGILITÀ','LAMPO'] },
+  { id:133,name:'EEVEE',      type:'Normale',      types:['normale'],       hp:55, atk:55, satk:45, def:50, sdef:65, spd:55, moves:['AGILITÀ','MORSO','CODA COLPO','URLO'] },
+  { id:66, name:'MACHOP',     type:'Lotta',        types:['lotta'],         hp:70, atk:80, satk:35, def:50, sdef:35, spd:35, moves:['KARATE','LOTTA','COLPO BASSO','SCHIACCIATA'] },
+  { id:92, name:'GASTLY',     type:'Spettro',      types:['spettro','veleno'], hp:30, atk:35, satk:100, def:30, sdef:35, spd:80, moves:['NOTTE OSCURA','IPNOSI','LECCATA','MALEDIZIONE'] },
+  { id:74, name:'GEODUDE',    type:'Roccia/Terra', types:['roccia','terra'],hp:40, atk:80, satk:30, def:100,sdef:30, spd:20, moves:['ROCCIA ROCCIOSA','FRANA','SCHIACCIATA','DIFESA CURLING'] },
+  { id:63, name:'ABRA',       type:'Psico',        types:['psico'],         hp:25, atk:20, satk:105,def:15, sdef:55, spd:90, moves:['TELETRASPORTO','CONFUSIONE','PSICHICO','RECUPERO'] },
+];
+
+const MOVE_DATA = {
+  'FOGLIA LAMA':    {type:'erba',   cat:'fisico',   pow:55, acc:95, pp:25, effect:'Attacco con foglie taglienti. Alta prob. colpo critico.'},
+  'ASSORBIMENTO':   {type:'erba',   cat:'speciale', pow:20, acc:100,pp:25, effect:'Assorbe PS dal nemico pari a metà del danno inflitto.'},
+  'CRESCITA':       {type:'normale',cat:'stato',    pow:0,  acc:0,  pp:40, effect:'Aumenta ATK Speciale di 1 livello.'},
+  'BRACE':          {type:'fuoco',  cat:'speciale', pow:40, acc:100,pp:25, effect:'10% di probabilità di bruciare il bersaglio.'},
+  'GRAFFIO':        {type:'normale',cat:'fisico',   pow:40, acc:100,pp:35, effect:'Attacco base con gli artigli.'},
+  'RUGGITO':        {type:'normale',cat:'stato',    pow:0,  acc:100,pp:40, effect:'Abbassa l\'ATK del nemico di 1 livello.'},
+  'FOCALENERGIA':   {type:'normale',cat:'stato',    pow:0,  acc:0,  pp:30, effect:'Aumenta la prob. di colpo critico.'},
+  'PISTOLACQUA':    {type:'acqua',  cat:'speciale', pow:40, acc:100,pp:25, effect:'Getto d\'acqua preciso. Affidabile e veloce.'},
+  'RIPARO':         {type:'normale',cat:'stato',    pow:0,  acc:0,  pp:10, effect:'Schiva qualsiasi mossa quel turno. Fallisce se usato in sequenza.'},
+  'CODA COLPO':     {type:'normale',cat:'fisico',   pow:40, acc:100,pp:35, effect:'Colpo con la coda. Abbassa la DEF del nemico.'},
+  'TUONO':          {type:'elettro',cat:'speciale', pow:110,acc:70, pp:10, effect:'30% paralisi. Preciso in caso di pioggia.'},
+  'FULMINE':        {type:'elettro',cat:'speciale', pow:90, acc:100,pp:15, effect:'30% paralisi. Mossa elettrica standard.'},
+  'AGILITÀ':        {type:'psico',  cat:'stato',    pow:0,  acc:0,  pp:30, effect:'Raddoppia la Velocità del Pokemon.'},
+  'LAMPO':          {type:'elettro',cat:'stato',    pow:0,  acc:100,pp:20, effect:'Abbassa l\'evasione del nemico di 1 livello.'},
+  'MORSO':          {type:'buio',   cat:'fisico',   pow:60, acc:100,pp:25, effect:'30% probabilità di far spaventare il nemico.'},
+  'URLO':           {type:'normale',cat:'stato',    pow:0,  acc:100,pp:40, effect:'Abbassa ATK del nemico di 1 livello.'},
+  'KARATE':         {type:'lotta',  cat:'fisico',   pow:50, acc:100,pp:25, effect:'Mossa lotta base. Affidabile.'},
+  'LOTTA':          {type:'lotta',  cat:'fisico',   pow:50, acc:100,pp:20, effect:'Infligge danno anche all\'utilizzatore (1/4).'},
+  'COLPO BASSO':    {type:'lotta',  cat:'fisico',   pow:0,  acc:100,pp:20, effect:'Danno basato sulla velocità del nemico.'},
+  'SCHIACCIATA':    {type:'normale',cat:'fisico',   pow:40, acc:100,pp:35, effect:'Attacco normale semplice.'},
+  'NOTTE OSCURA':   {type:'spettro',cat:'fisico',   pow:0,  acc:100,pp:15, effect:'Danno = livello utilizzatore. Sfida la controparte.'},
+  'IPNOSI':         {type:'psico',  cat:'stato',    pow:0,  acc:60, pp:20, effect:'Mette il bersaglio in stato Sonno.'},
+  'LECCATA':        {type:'normale',cat:'fisico',   pow:20, acc:100,pp:30, effect:'Attacco debole ma sempre utile.'},
+  'MALEDIZIONE':    {type:'spettro',cat:'stato',    pow:0,  acc:0,  pp:10, effect:'Per Spettro: perde metà PS ma maledice il nemico (-1PS/turno).'},
+  'ROCCIA ROCCIOSA':{type:'roccia', cat:'fisico',   pow:50, acc:90, pp:15, effect:'Attacco con massi. Può ridurre la velocità.'},
+  'FRANA':          {type:'terra',  cat:'fisico',   pow:75, acc:90, pp:15, effect:'Attacco terra potente.'},
+  'DIFESA CURLING': {type:'normale',cat:'stato',    pow:0,  acc:0,  pp:40, effect:'Si arrotola aumentando la DEF. Potenzia Rotolamento.'},
+  'TELETRASPORTO':  {type:'psico',  cat:'stato',    pow:0,  acc:0,  pp:20, effect:'Fuori combattimento: fugge. In combattimento: nessun effetto.'},
+  'CONFUSIONE':     {type:'psico',  cat:'speciale', pow:50, acc:100,pp:25, effect:'10% probabilità di confondere il bersaglio.'},
+  'PSICHICO':       {type:'psico',  cat:'speciale', pow:90, acc:100,pp:10, effect:'10% abbassa DEF Speciale del nemico.'},
+  'RECUPERO':       {type:'normale',cat:'stato',    pow:0,  acc:0,  pp:10, effect:'Recupera metà dei PS massimi.'},
+  'COLPO CORPO':    {type:'normale',cat:'fisico',   pow:85, acc:100,pp:15, effect:'Attacco potente con il corpo.'},
+};
+
+const SPRITE_URL = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+
+const AVATAR_COLORS = ['#e03131','#1971C2','#2F9E44','#F59F00','#7048e8','#c2255c'];
+
+// ===== STATE =====
+let S = {
+  myId: null, myRoom: null, myName: null,
+  trainerClass: null, trainerAge: null,
+  pokemon: null, selectedPoke: null,
+  inventory: [
+    {name:'POZIONE', icon:'🧴', qty:3, effect:'restore', val:20},
+    {name:'POKEBALL', icon:'⚪', qty:5, effect:'catch', val:1},
+    {name:'ANTIDOTO', icon:'💉', qty:2, effect:'status', val:0},
+  ],
+  listeners: [],
+  wikiMode: 'list',
+  tempHp: 0,
+};
+
+// ===== LOBBY =====
+function buildPokeSelector() {
+  const grid = document.getElementById('poke-selector');
+  grid.innerHTML = '';
+  POKEMON_LIST.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'poke-opt';
+    d.innerHTML = `<img src="${SPRITE_URL(p.id)}" alt="${p.name}"/><div class="pname">${p.name}</div><div class="ptype">${p.type}</div>`;
+    d.onclick = () => {
+      document.querySelectorAll('.poke-opt').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+      S.selectedPoke = p;
+    };
+    grid.appendChild(d);
+  });
+}
+buildPokeSelector();
+
+function goStep2() {
+  const name = document.getElementById('inp-name').value.trim().toUpperCase();
+  if (!name) { showErr('err1','INSERISCI IL TUO NOME!'); return; }
+  S.myName = name;
+  const room = document.getElementById('inp-room').value.trim().toUpperCase();
+  S.myRoom = room || ('PKM' + Math.random().toString(36).slice(2,5).toUpperCase());
+  S.myId = name + '_' + Math.random().toString(36).slice(2,6);
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'flex';
+}
+
+function goStep3() {
+  S.trainerClass = document.getElementById('inp-class').value;
+  S.trainerAge = document.getElementById('inp-age').value;
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'flex';
+}
+
+async function enterGame() {
+  if (!S.selectedPoke) { showErr('err3','SELEZIONA UN POKEMON!'); return; }
+  const p = S.selectedPoke;
+  S.pokemon = { ...p, currentHp: p.hp };
+
+  const db = window._db;
+  const playerRef = window._ref(db, `rooms/${S.myRoom}/players/${S.myId}`);
+  await window._set(playerRef, {
+    id: S.myId, name: S.myName,
+    trainerClass: S.trainerClass, age: S.trainerAge,
+    pokemon: S.pokemon,
+    inventory: S.inventory,
+    avatarColor: AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)],
+    lastSeen: Date.now(), joinedAt: Date.now()
+  });
+
+  // Check se stanza nuova
+  const msgsRef = window._ref(db, `rooms/${S.myRoom}/messages`);
+  const snap = await window._get(msgsRef);
+  if (!snap.exists()) {
+    await pushMsg({type:'system', author:'SISTEMA', text:`Stanza ${S.myRoom} creata!\nCondividi questo codice con i tuoi amici.`});
+  }
+  await pushMsg({type:'system', author:'SISTEMA', text:`${S.myName} è entrato con ${p.name}!`});
+
+  showGame();
+}
+
+// ===== GAME =====
+function showGame() {
+  document.getElementById('screen-lobby').style.display = 'none';
+  document.getElementById('screen-game').style.display = 'flex';
+  document.getElementById('room-display').textContent = `STANZA: ${S.myRoom}`;
+  document.getElementById('feed-session').textContent = S.myRoom;
+  renderMyMoves();
+  renderInventory();
+  startListeners();
+}
+
+function startListeners() {
+  const db = window._db;
+  // Messaggi
+  const msgsRef = window._ref(db, `rooms/${S.myRoom}/messages`);
+  const u1 = window._onValue(msgsRef, snap => {
+    const msgs = [];
+    snap.forEach(c => msgs.push(c.val()));
+    renderFeed(msgs);
+  });
+  // Giocatori
+  const playRef = window._ref(db, `rooms/${S.myRoom}/players`);
+  const u2 = window._onValue(playRef, snap => {
+    const players = {};
+    snap.forEach(c => { const p = c.val(); if(Date.now()-p.lastSeen < 60000) players[p.id]=p; });
+    renderPlayers(players);
+  });
+  // Heartbeat
+  S.hb = setInterval(async () => {
+    await window._update(window._ref(db, `rooms/${S.myRoom}/players/${S.myId}`), {lastSeen: Date.now()});
+  }, 15000);
+  S.listeners = [u1, u2];
+}
+
+async function pushMsg(msg) {
+  msg.ts = new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  msg.id = Date.now() + Math.random();
+  const db = window._db;
+  await window._push(window._ref(db, `rooms/${S.myRoom}/messages`), msg);
+}
+
+async function sendAction() {
+  const inp = document.getElementById('action-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  await pushMsg({type:'player', author:S.myName, pokeName:S.pokemon.name, text});
+}
+
+async function rollDie(sides) {
+  const r = Math.floor(Math.random()*sides)+1;
+  document.getElementById('dice-result').textContent = `D${sides} → ${r}`;
+  await pushMsg({type:'system', author:'🎲 DADO', text:`${S.myName} ha lanciato D${sides}: ${r}`});
+}
+
+async function rollPool() {
+  const n = parseInt(document.getElementById('pool-count').value)||1;
+  const results = Array.from({length:n}, ()=>Math.floor(Math.random()*6)+1);
+  const successes = results.filter(r=>r>=4).length;
+  const el = document.getElementById('pool-result');
+  el.innerHTML = `[${results.join(' ')}]<br><span style="color:${successes>0?'var(--green)':'var(--red)'}">${successes} SUCCESSI</span>`;
+  await pushMsg({type:'system', author:'🎲 POOL', text:`${S.myName} ha lanciato ${n}D6: [${results.join(' ')}] → ${successes} SUCCESSO/I`});
+}
+
+// ===== RENDER =====
+function renderFeed(msgs) {
+  const feed = document.getElementById('feed');
+  const atBottom = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 30;
+  feed.innerHTML = '';
+  msgs.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'dialog-box';
+    let authorColor = m.type==='master'?'var(--yellow)':m.type==='player'?'var(--border-light)':'var(--gray)';
+    let authorLabel = m.type==='master'?'⚔ MASTER':m.type==='player'?`▷ ${m.author}`:m.author;
+    div.innerHTML = `<div class="dialog-author" style="color:${authorColor}">${authorLabel}</div><div class="dialog-text">${esc(m.text)}</div><div class="dialog-time">${m.ts||''}</div>${m.type==='master'?'<div class="dialog-arrow">▼</div>':''}`;
+    feed.appendChild(div);
+  });
+  if (atBottom) feed.scrollTop = feed.scrollHeight;
+}
+
+function renderPlayers(players) {
+  const list = document.getElementById('players-list');
+  const count = Object.keys(players).length;
+  document.getElementById('player-count').textContent = `${count}/6`;
+  document.getElementById('online-count').textContent = `${count} ONLINE`;
+  list.innerHTML = '';
+  Object.values(players).forEach(p => {
+    const isMe = p.id === S.myId;
+    const poke = p.pokemon;
+    const hpPct = Math.round((poke.currentHp/poke.hp)*100);
+    const hpColor = hpPct>50?'var(--green)':hpPct>20?'var(--green-mid)':'var(--red)';
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    div.innerHTML = `
+      <div class="player-name-row">
+        <div class="player-avatar" style="background:${p.avatarColor||'#4888c8'}">
+          ${p.name[0]}
+        </div>
+        <div>
+          <div class="player-name">${esc(p.name)}${isMe?'<span class="you-tag">TU</span>':''}</div>
+          <div class="player-class-row">${p.trainerClass} · ${p.age} ANNI</div>
+        </div>
+      </div>
+      <div class="poke-display">
+        <div class="sprite-box"><img src="${SPRITE_URL(poke.id)}" alt="${poke.name}"/></div>
+        <div class="poke-info">
+          <div class="poke-name-row">${poke.name}</div>
+          <div class="poke-lv"><span class="type-badge t-${poke.types[0]}">${poke.type}</span></div>
+          <div class="hp-label-row"><span class="hp-lbl">PS</span><span class="hp-val">${poke.currentHp}/${poke.hp}</span></div>
+          <div class="hp-track"><div class="hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
+        </div>
+      </div>
+      ${isMe?`<button class="gba-btn" style="width:100%;margin-top:4px;font-size:6px" onclick="openHpModal()">MODIFICA PS ▶</button>`:''}`;
+    list.appendChild(div);
+  });
+}
+
+function renderMyMoves() {
+  const poke = S.pokemon;
+  document.getElementById('moves-header').textContent = `${poke.name} — MOSSE`;
+  const grid = document.getElementById('moves-grid');
+  grid.innerHTML = '';
+  (poke.moves||[]).forEach(moveName => {
+    const m = MOVE_DATA[moveName]||{type:'normale',cat:'fisico',pow:40,acc:100,pp:20,effect:''};
+    const btn = document.createElement('button');
+    btn.className = 'move-btn';
+    btn.innerHTML = `${moveName}<span class="move-type-label t-${m.type}">${m.type.toUpperCase()}</span><span class="move-pp">${m.cat.toUpperCase()} · PP ${m.pp}</span>`;
+    btn.onclick = () => rollMove(moveName, m);
+    grid.appendChild(btn);
+  });
+}
+
+async function rollMove(name, m) {
+  // Pool base Pokerole: 2 dadi per mosse normali, 3 per potenti
+  const baseDice = m.pow >= 80 ? 3 : m.pow >= 50 ? 2 : (m.pow===0?1:2);
+  const results = Array.from({length:baseDice}, ()=>Math.floor(Math.random()*6)+1);
+  const successes = results.filter(r=>r>=4).length;
+  const el = document.getElementById('move-result');
+  el.innerHTML = `${name}<br>[${results.join(' ')}]<br><span style="color:${successes>0?'var(--green)':'var(--red)'}">${successes} SUCC.</span>`;
+  await pushMsg({type:'system', author:'⚔ MOSSA', text:`${S.myName} usa ${name}!\nDadi: [${results.join(' ')}] → ${successes} SUCCESSO/I`});
+}
+
+function renderInventory() {
+  const list = document.getElementById('inv-list');
+  list.innerHTML = '';
+  S.inventory.forEach((item, i) => {
+    if (item.qty <= 0) return;
+    const div = document.createElement('div');
+    div.className = 'inv-item';
+    div.innerHTML = `<span class="inv-icon">${item.icon}</span><span style="flex:1">${item.name}</span><span class="inv-qty">x${item.qty}</span><button class="gba-btn inv-use-btn" onclick="useItem(${i})">USA</button>`;
+    list.appendChild(div);
+  });
+}
+
+async function useItem(i) {
+  const item = S.inventory[i];
+  if (!item || item.qty <= 0) return;
+  item.qty--;
+  if (item.effect === 'restore') {
+    S.pokemon.currentHp = Math.min(S.pokemon.hp, S.pokemon.currentHp + item.val);
+    await window._update(window._ref(window._db, `rooms/${S.myRoom}/players/${S.myId}/pokemon`), {currentHp: S.pokemon.currentHp});
+  }
+  await pushMsg({type:'system', author:'🎒 ZAINO', text:`${S.myName} ha usato ${item.name}!`});
+  renderInventory();
+  showToast(`${item.name} USATO!`);
+}
+
+async function addInvItem() {
+  const name = document.getElementById('inv-add-name').value.trim().toUpperCase();
+  const qty = parseInt(document.getElementById('inv-add-qty').value)||1;
+  if (!name) return;
+  S.inventory.push({name, icon:'📦', qty, effect:'none', val:0});
+  document.getElementById('inv-add-name').value = '';
+  renderInventory();
+}
+
+// ===== WIKI =====
+let wikiAll = POKEMON_LIST.map(p=>p);
+function wikiSearch(q) {
+  const results = q ? wikiAll.filter(p=>p.name.includes(q.toUpperCase())) : wikiAll;
+  renderWikiList(results);
+}
+
+function renderWikiList(list) {
+  document.getElementById('wiki-main').style.display = 'flex';
+  document.getElementById('wiki-main').style.flexDirection = 'column';
+  document.getElementById('wiki-detail-view').style.display = 'none';
+  const el = document.getElementById('wiki-results');
+  el.innerHTML = '';
+  list.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'wiki-item';
+    div.innerHTML = `<img src="${SPRITE_URL(p.id)}" alt="${p.name}"/><div class="wiki-item-info"><div class="wiki-item-name">${p.name}</div><div class="wiki-item-type">${p.type}</div></div><span style="color:var(--gray);font-size:8px">▶</span>`;
+    div.onclick = () => showWikiDetail(p);
+    el.appendChild(div);
+  });
+}
+renderWikiList(wikiAll);
+
+function showWikiDetail(p) {
+  document.getElementById('wiki-main').style.display = 'none';
+  const view = document.getElementById('wiki-detail-view');
+  view.style.display = 'flex';
+  const content = document.getElementById('wiki-detail-content');
+  const movesHtml = (p.moves||[]).map(mv => {
+    const m = MOVE_DATA[mv]||{type:'normale',cat:'fisico',pow:40,acc:100,pp:20,effect:''};
+    return `<div class="wiki-move-row"><span style="flex:1;color:var(--white)">${mv}</span><span class="type-badge t-${m.type}" style="margin-right:4px">${m.type.toUpperCase()}</span><span style="color:var(--gray)">${m.cat==='stato'?'STATO':`POT.${m.pow}`}</span></div>`;
+  }).join('');
+  content.innerHTML = `
+    <div class="wiki-back" onclick="backWiki()">◀ TORNA ALLA LISTA</div>
+    <div class="wiki-poke-header">
+      <img src="${SPRITE_URL(p.id)}" style="width:64px;height:64px;image-rendering:pixelated"/>
+      <div>
+        <div class="wiki-poke-name">${p.name}</div>
+        <div>${p.types.map(t=>`<span class="type-badge t-${t}">${t.toUpperCase()}</span>`).join(' ')}</div>
+      </div>
+    </div>
+    <div class="wiki-stat-grid">
+      <div class="wiki-stat"><div class="wiki-stat-label">PS</div><div class="wiki-stat-val">${p.hp}</div></div>
+      <div class="wiki-stat"><div class="wiki-stat-label">ATK</div><div class="wiki-stat-val">${p.atk}</div></div>
+      <div class="wiki-stat"><div class="wiki-stat-label">ATK SP.</div><div class="wiki-stat-val">${p.satk}</div></div>
+      <div class="wiki-stat"><div class="wiki-stat-label">DEF</div><div class="wiki-stat-val">${p.def}</div></div>
+      <div class="wiki-stat"><div class="wiki-stat-label">DEF SP.</div><div class="wiki-stat-val">${p.sdef}</div></div>
+      <div class="wiki-stat"><div class="wiki-stat-label">VELOCITÀ</div><div class="wiki-stat-val">${p.spd}</div></div>
+    </div>
+    <div class="wiki-moves-title">▶ MOSSE DISPONIBILI</div>
+    ${movesHtml}`;
+}
+
+function backWiki() {
+  document.getElementById('wiki-detail-view').style.display = 'none';
+  document.getElementById('wiki-main').style.display = 'flex';
+  document.getElementById('wiki-main').style.flexDirection = 'column';
+}
+
+// ===== HP MODAL =====
+function openHpModal() {
+  S.tempHp = S.pokemon.currentHp;
+  document.getElementById('hp-modal-poke').textContent = `${S.pokemon.name} — PS ATTUALI: ${S.pokemon.currentHp}/${S.pokemon.hp}`;
+  document.getElementById('hp-edit-val').textContent = S.tempHp;
+  document.getElementById('modal-hp').classList.add('show');
+}
+
+function changeHp(delta) {
+  S.tempHp = Math.max(0, Math.min(S.pokemon.hp, S.tempHp + delta));
+  document.getElementById('hp-edit-val').textContent = S.tempHp;
+}
+
+async function saveHp() {
+  S.pokemon.currentHp = S.tempHp;
+  await window._update(window._ref(window._db, `rooms/${S.myRoom}/players/${S.myId}/pokemon`), {currentHp: S.tempHp});
+  closeModal('modal-hp');
+  showToast('PS AGGIORNATI!');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===== TABS =====
+function setTab(id, el) {
+  document.querySelectorAll('.stab-content').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ===== UTILS =====
+function copyRoom() {
+  navigator.clipboard.writeText(S.myRoom).catch(()=>{});
+  showToast('CODICE COPIATO!');
+}
+
+function leaveGame() {
+  if (!confirm('VUOI DAVVERO USCIRE?')) return;
+  clearInterval(S.hb);
+  S.listeners.forEach(u => u && u());
+  document.getElementById('screen-game').style.display = 'none';
+  document.getElementById('screen-lobby').style.display = 'flex';
+  document.getElementById('step1').style.display = 'flex';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'none';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
