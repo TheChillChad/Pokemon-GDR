@@ -421,7 +421,7 @@ async function callMaster(action,isIntro){
   const th=document.getElementById('thinking');
   th.classList.add('show');
   try{
-    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Giocatore: ${G.myName}, Pokemon: ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Stanza: ${G.myRoom}. Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi tu stesso.`;
+    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Il giocatore si chiama ${G.myName} e ha come Pokemon ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Usa solo luoghi del mondo Pokemon (Biancavilla, Palcelverde, ecc). Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi tu stesso.`;
 
     const history=G.msgs.slice(-10).filter(m=>m.type==='master'||m.type==='player').map(m=>{
       if(m.type==='master')return`Master: ${m.text}`;
@@ -432,9 +432,13 @@ async function callMaster(action,isIntro){
 
     const response=await puter.ai.chat(prompt,{model:'gpt-4o-mini'});
     const text=typeof response==='string'?response:(response?.message?.content||response?.choices?.[0]?.message?.content||response?.content||'');
-    console.log('Puter response:', JSON.stringify(response?.message?.content));
-    if(text)await pushMsg({type:'master',author:'MASTER',text});
-    else await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
+    console.log('Text ricevuto:', text?.slice(0,50));
+    if(text){
+      await pushMsg({type:'master',author:'MASTER',text});
+      console.log('Messaggio salvato su Firebase!');
+    } else {
+      await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
+    }
   }catch(e){
     console.error('Master error:',e);
     await pushMsg({type:'system',author:'SISTEMA',text:'Master non disponibile. Assicurati di essere connesso a Puter.'});
