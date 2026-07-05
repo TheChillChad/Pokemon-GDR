@@ -431,7 +431,8 @@ async function callMaster(action,isIntro){
     const prompt=isIntro?`${sys}\n\n${action}`:`${sys}\n\nStorico recente:\n${history}\n\nAzione attuale di ${G.myName}: ${action}\n\nRispondi come Master:`;
 
     const response=await puter.ai.chat(prompt,{model:'gpt-4o-mini'});
-    const text=typeof response==='string'?response:(response?.message?.content||response?.content||response?.choices?.[0]?.message?.content||'');
+    const text=typeof response==='string'?response:(response?.message?.content||response?.choices?.[0]?.message?.content||response?.content||'');
+    console.log('Puter response:', JSON.stringify(response?.message?.content));
     if(text)await pushMsg({type:'master',author:'MASTER',text});
     else await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
   }catch(e){
