@@ -369,7 +369,7 @@ async function callMaster(action,isIntro){
 
     const resp=await fetch(GEMINI_URL,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','X-goog-api-key':GEMINI_KEY},
       body:JSON.stringify({
         systemInstruction:{parts:[{text:sys}]},
         contents,
