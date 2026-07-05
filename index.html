@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pokemon GDR</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="https://js.puter.com/v2/"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#101820;--pan:#183050;--bd:#4888c8;--bdl:#78b8f0;--wh:#e8f0f8;--yl:#f8d030;--rd:#e83030;--gn:#38c838;--gm:#f8a800;--gr:#607890;--sh:#080c10;--fn:'Press Start 2P',monospace}
@@ -16,6 +17,7 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
 .inp{background:var(--pan);border:2px solid var(--bd);color:var(--wh);font-family:var(--fn);font-size:7px;padding:7px 9px;outline:none;width:100%}
 .inp:focus{border-color:var(--bdl)}.inp::placeholder{color:var(--gr)}
 .sel{background:var(--pan);border:2px solid var(--bd);color:var(--wh);font-family:var(--fn);font-size:7px;padding:7px 9px;outline:none;width:100%}
+/* LOBBY */
 #lobby{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:.8rem;padding:1rem;overflow-y:auto}
 .lcard{background:var(--pan);border:3px solid var(--bd);padding:1.2rem;width:100%;max-width:340px;display:flex;flex-direction:column;gap:.7rem}
 .lcard h2{font-size:8px;color:var(--bdl);letter-spacing:1px}
@@ -24,15 +26,18 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
 .dots{display:flex;gap:5px;justify-content:center;margin-bottom:4px}
 .dot{width:7px;height:7px;background:#1a2a40;border:1px solid var(--bd)}.dot.on{background:var(--yl);border-color:var(--yl)}
 .err{font-size:6px;color:var(--rd);background:rgba(232,48,48,.1);border:1px solid var(--rd);padding:5px 7px;display:none}
+.saved-badge{font-size:6px;color:var(--gn);background:rgba(56,200,56,.1);border:1px solid var(--gn);padding:5px 7px;display:none}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .popt{border:2px solid var(--bd);background:#1a2a40;padding:6px 3px;text-align:center;cursor:pointer}
 .popt:hover{border-color:var(--bdl)}.popt.sel2{border-color:var(--yl);background:rgba(248,208,48,.1)}
 .popt img{width:44px;height:44px;image-rendering:pixelated;display:block;margin:0 auto 3px}
 .popt .pn{font-size:6px;color:var(--wh)}.popt .pt{font-size:5px;color:var(--gr);margin-top:1px}
+/* GAME */
 #game{display:none;flex-direction:column;flex:1;overflow:hidden}
 .topbar{background:var(--sh);border-bottom:2px solid var(--bd);padding:0 10px;height:38px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .ttl{font-size:8px;color:var(--yl);letter-spacing:1px}
 .rpill{background:var(--pan);border:2px solid var(--bd);padding:3px 7px;font-size:6px;color:var(--bdl);cursor:pointer}
+.rpill:hover{border-color:var(--bdl)}
 .onrow{display:flex;align-items:center;gap:6px;font-size:6px;color:var(--gr)}
 .dgr{width:6px;height:6px;background:var(--gn);display:inline-block;animation:blk 2s infinite}
 @keyframes blk{0%,100%{opacity:1}50%{opacity:.4}}
@@ -49,7 +54,7 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
 .marr{position:absolute;bottom:5px;right:9px;color:var(--yl);font-size:7px;animation:bnc .8s infinite}
 .abar{border-top:2px solid var(--bd);background:var(--sh);padding:7px 9px;display:flex;gap:5px;align-items:center;flex-shrink:0}
 .ainp{flex:1;padding:7px 9px}
-.thinking{display:none;padding:6px 10px;font-size:6px;color:var(--gr);flex-shrink:0}
+.thinking{display:none;padding:6px 10px;font-size:6px;color:var(--gr);flex-shrink:0;animation:blk 1s infinite}
 .thinking.show{display:block}
 .sb{width:230px;flex-shrink:0;background:var(--sh);display:flex;flex-direction:column;overflow:hidden}
 .stitle{background:var(--pan);padding:5px 9px;font-size:6px;color:var(--bdl);letter-spacing:1px;border-bottom:1px solid var(--bd)}
@@ -100,20 +105,36 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
 .hpval{font-size:9px;color:var(--yl);min-width:28px;text-align:center}
 .toast{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);background:var(--pan);border:2px solid var(--gn);color:var(--gn);padding:6px 12px;font-size:6px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:200}
+.loading-title{font-size:10px;color:var(--yl)}
+.loading-sub{font-size:7px;color:var(--gr);animation:blk 1s infinite}
 </style>
 </head>
 <body>
-<div id="lobby">
+
+<div class="loading-screen" id="loading">
+  <div style="font-size:40px">⬛</div>
+  <div class="loading-title">POKEMON GDR</div>
+  <div class="loading-sub">CARICAMENTO...</div>
+</div>
+
+<div id="lobby" style="display:none">
   <div style="font-size:9px;color:var(--yl);letter-spacing:2px;text-align:center">POKEMON GDR</div>
-  <div style="font-size:6px;color:var(--gr);text-align:center;margin-bottom:.3rem">AI MASTER — GEMINI</div>
+  <div style="font-size:6px;color:var(--gr);text-align:center;margin-bottom:.3rem">AI MASTER — PUTER.JS</div>
+
+  <!-- STEP 1 -->
   <div class="lcard" id="s1">
     <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
-    <h2>ENTRA O CREA STANZA</h2>
-    <div class="fld"><label>NOME</label><input class="inp" id="iname" placeholder="Es. MARCO" maxlength="16"/></div>
+    <h2>ACCESSO</h2>
+    <div class="saved-badge" id="saved-badge">PROFILO SALVATO TROVATO!</div>
+    <div class="fld"><label>NOME ALLENATORE</label><input class="inp" id="iname" placeholder="Es. MARCO" maxlength="16"/></div>
     <div class="fld"><label>CODICE STANZA (vuoto = nuova)</label><input class="inp" id="iroom" placeholder="Es. PKM4X2" maxlength="8" style="text-transform:uppercase"/></div>
     <div class="err" id="e1"></div>
-    <button class="btn gn" onclick="step2()">CONTINUA</button>
+    <button class="btn gn" onclick="step2()" id="btn-continue">CONTINUA</button>
+    <button class="btn" onclick="loadSaved()" id="btn-load" style="display:none">RIPRENDI PROFILO SALVATO</button>
   </div>
+
+  <!-- STEP 2 -->
   <div class="lcard" id="s2" style="display:none">
     <div class="dots"><div class="dot"></div><div class="dot on"></div><div class="dot"></div></div>
     <h2>IL TUO ALLENATORE</h2>
@@ -129,6 +150,8 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
     <div class="fld"><label>ETA</label><input class="inp" id="iage" type="number" min="10" max="99" value="16" style="width:60px"/></div>
     <button class="btn gn" onclick="step3()">SCEGLI POKEMON</button>
   </div>
+
+  <!-- STEP 3 -->
   <div class="lcard" id="s3" style="display:none">
     <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot on"></div></div>
     <h2>SCEGLI IL TUO POKEMON</h2>
@@ -205,11 +228,12 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
           </div>
         </div>
         <div class="tcon" id="t-guida">
-          <div class="gsec"><div class="gtitle">COME SI GIOCA</div><div class="gtxt">Scrivi la tua azione e premi INVIA. L'<span class="ghl">AI MASTER</span> risponde per tutti.</div></div>
-          <div class="gsec"><div class="gtitle">DADI POKEROLE</div><div class="gtxt">Pool di <span class="ghl">D6</span>. Ogni dado <span class="ghl">4 o piu</span> = 1 SUCCESSO.</div></div>
-          <div class="gsec"><div class="gtitle">COMBATTIMENTO</div><div class="gtxt">1. Master dichiara incontro<br/>2. Tiro iniziativa<br/>3. Clicca mossa per tirare<br/>4. Master narra risultato</div></div>
-          <div class="gsec"><div class="gtitle">TIPI</div><div class="gtxt"><span class="ghl">SUPER EFF.</span> +1 dado<br/><span class="ghl">NON MOLTO EFF.</span> -1 dado</div></div>
-          <div class="gsec"><div class="gtitle">STATI</div><div class="gtxt"><span class="ghl">PARALISI</span>: -1 dado VEL<br/><span class="ghl">SONNO</span>: skip turno<br/><span class="ghl">VELENO</span>: -1 PS/turno</div></div>
+          <div class="gsec"><div class="gtitle">COME SI GIOCA</div><div class="gtxt">Scrivi la tua azione e premi INVIA. L'<span class="ghl">AI MASTER</span> risponde per tutti in tempo reale.</div></div>
+          <div class="gsec"><div class="gtitle">DADI POKEROLE</div><div class="gtxt">Pool di <span class="ghl">D6</span>. Ogni dado <span class="ghl">4 o piu</span> = 1 SUCCESSO. 0 successi = fallimento.</div></div>
+          <div class="gsec"><div class="gtitle">COMBATTIMENTO</div><div class="gtxt">1. Master dichiara incontro<br/>2. Tiro iniziativa (Destrezza)<br/>3. Clicca mossa per tirare<br/>4. Master narra il risultato</div></div>
+          <div class="gsec"><div class="gtitle">TIPI</div><div class="gtxt"><span class="ghl">SUPER EFF.</span> +1 dado<br/><span class="ghl">NON MOLTO EFF.</span> -1 dado<br/><span class="ghl">IMMUNE</span> = 0 danni</div></div>
+          <div class="gsec"><div class="gtitle">STATI ALTERATI</div><div class="gtxt"><span class="ghl">PARALISI</span>: -1 dado VEL<br/><span class="ghl">SONNO</span>: skip turno<br/><span class="ghl">VELENO</span>: -1 PS/turno<br/><span class="ghl">CONFUSIONE</span>: 50% auto-danno</div></div>
+          <div class="gsec"><div class="gtitle">PROFILO</div><div class="gtxt">Il tuo profilo viene <span class="ghl">salvato automaticamente</span>. Alla prossima sessione clicca "RIPRENDI" per rientrare senza ricreare tutto.</div></div>
         </div>
       </div>
     </div>
@@ -242,12 +266,20 @@ const cfg={apiKey:"AIzaSyCW8eKl58m_jW0XIoJE68A1j0LZLUavRGI",authDomain:"pokemon-
 const app=initializeApp(cfg);
 const db=getDatabase(app);
 window._db=db;window._ref=ref;window._set=set;window._get=get;window._onValue=onValue;window._push=push;window._update=update;
+document.getElementById('loading').style.display='none';
+document.getElementById('lobby').style.display='flex';
+// Controlla profilo salvato
+const saved=localStorage.getItem('pkm_profile');
+if(saved){
+  const p=JSON.parse(saved);
+  document.getElementById('iname').value=p.name||'';
+  document.getElementById('iroom').value=p.room||'';
+  document.getElementById('saved-badge').style.display='block';
+  document.getElementById('btn-load').style.display='block';
+}
 </script>
 
 <script>
-const GEMINI_KEY='AIzaSyAb8RN6Ij6LEdL2NBratVHyZLQVqK-rUreEjITQGVlk5fjRMGeA';
-const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY;
-
 const POKES=[
   {id:1,name:'BULBASAUR',type:'Erba',types:['erba'],hp:45,atk:49,satk:65,def:49,sdef:65,spd:45,moves:['FOGLIA LAMA','ASSORBIMENTO','CRESCITA','COLPO CORPO']},
   {id:4,name:'CHARMANDER',type:'Fuoco',types:['fuoco'],hp:39,atk:52,satk:60,def:43,sdef:50,spd:65,moves:['BRACE','GRAFFIO','RUGGITO','FOCALENERGIA']},
@@ -263,7 +295,10 @@ const MOVES={'FOGLIA LAMA':{type:'erba',pow:55,pp:25},'ASSORBIMENTO':{type:'erba
 const TC={fuoco:'#f87848',acqua:'#78a8f8',erba:'#78c850',elettro:'#f8d030',normale:'#a8a878',psico:'#f85888',roccia:'#b8a038',spettro:'#705898',lotta:'#c03028'};
 const AV=['#e03131','#1971C2','#2F9E44','#F59F00','#7048e8','#c2255c'];
 const SPR=id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-let G={myId:null,myRoom:null,myName:null,cls:null,age:null,poke:null,selPoke:null,inv:[{name:'POZIONE',icon:'🧴',qty:3,eff:'restore',val:20},{name:'POKEBALL',icon:'⚪',qty:5,eff:'catch',val:1},{name:'ANTIDOTO',icon:'💉',qty:2,eff:'status',val:0}],tempHp:0,msgs:[],unsub:[]};
+
+let G={myId:null,myRoom:null,myName:null,cls:null,age:null,poke:null,selPoke:null,
+  inv:[{name:'POZIONE',icon:'🧴',qty:3,eff:'restore',val:20},{name:'POKEBALL',icon:'⚪',qty:5,eff:'catch',val:1},{name:'ANTIDOTO',icon:'💉',qty:2,eff:'status',val:0}],
+  tempHp:0,msgs:[],unsub:[]};
 
 (function(){
   const g=document.getElementById('pgrid');
@@ -274,6 +309,32 @@ let G={myId:null,myRoom:null,myName:null,cls:null,age:null,poke:null,selPoke:nul
     g.appendChild(d);
   });
 })();
+
+function saveProfile(){
+  const profile={name:G.myName,room:G.myRoom,cls:G.cls,age:G.age,poke:G.poke,inv:G.inv};
+  localStorage.setItem('pkm_profile',JSON.stringify(profile));
+}
+
+function loadSaved(){
+  const saved=localStorage.getItem('pkm_profile');
+  if(!saved)return;
+  const p=JSON.parse(saved);
+  G.myName=p.name;G.myRoom=p.room;G.cls=p.cls;G.age=p.age;G.poke=p.poke;G.inv=p.inv||G.inv;
+  G.myId=G.myName+'_'+Math.random().toString(36).slice(2,6);
+  enterWithProfile();
+}
+
+async function enterWithProfile(){
+  try{
+    await window._set(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{
+      id:G.myId,name:G.myName,cls:G.cls,age:G.age,poke:G.poke,
+      avatarColor:AV[Math.floor(Math.random()*AV.length)],
+      lastSeen:Date.now(),joinedAt:Date.now()
+    });
+    await pushMsg({type:'system',author:'SISTEMA',text:`${G.myName} e rientrato nella stanza con ${G.poke.name}!`});
+    showGame();
+  }catch(e){alert('Errore: '+e.message);}
+}
 
 function step2(){
   const n=document.getElementById('iname').value.trim().toUpperCase();
@@ -291,6 +352,7 @@ function step3(){
   document.getElementById('s2').style.display='none';
   document.getElementById('s3').style.display='flex';
 }
+
 async function enter(){
   if(!G.selPoke){showErr('e3','SELEZIONA UN POKEMON!');return;}
   G.poke={...G.selPoke,currentHp:G.selPoke.hp};
@@ -302,16 +364,14 @@ async function enter(){
     });
     const snap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/messages`));
     if(!snap.exists()){
-      await pushMsg({type:'system',author:'SISTEMA',text:`Stanza ${G.myRoom} creata! Condividi il codice.`});
-      await callMaster(`Inizia la campagna Pokemon GDR. Dai il benvenuto a ${G.myName} con il suo ${G.poke.name}. Descrivi la scena iniziale davanti al laboratorio del Professor Oak a Biancavilla. Sii breve (4-5 righe) e chiedi cosa vuole fare.`,true);
+      await pushMsg({type:'system',author:'SISTEMA',text:`Stanza ${G.myRoom} creata! Condividi il codice con i tuoi amici.`});
+      callMaster(`Inizia la campagna Pokemon GDR. Dai il benvenuto a ${G.myName} con il suo ${G.poke.name}. Descrivi la scena iniziale davanti al laboratorio del Professor Oak a Biancavilla. Sii breve (4-5 righe) e chiedi cosa vuole fare.`,true);
     }else{
       await pushMsg({type:'system',author:'SISTEMA',text:`${G.myName} e entrato con ${G.poke.name}!`});
     }
+    saveProfile();
     showGame();
-  }catch(e){
-    console.error('Errore:',e);
-    alert('Errore: '+e.message);
-  }
+  }catch(e){console.error(e);alert('Errore: '+e.message);}
 }
 
 function showGame(){
@@ -330,7 +390,10 @@ function startListeners(){
     const pl={};snap.forEach(c=>{const p=c.val();if(Date.now()-p.lastSeen<60000)pl[p.id]=p;});
     renderPlayers(pl);
   });
-  G.hb=setInterval(()=>window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{lastSeen:Date.now()}),15000);
+  G.hb=setInterval(()=>{
+    window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{lastSeen:Date.now()});
+    saveProfile();
+  },15000);
   G.unsub=[u1,u2];
 }
 
@@ -345,47 +408,35 @@ async function sendAction(){
   const txt=inp.value.trim();
   if(!txt)return;
   inp.value='';
-  document.getElementById('sendbtn').disabled=true;
+  // Pubblica subito il messaggio del giocatore
   await pushMsg({type:'player',author:G.myName,text:txt});
-  await callMaster(txt,false);
-  document.getElementById('sendbtn').disabled=false;
+  // Poi chiama il master in background
+  document.getElementById('sendbtn').disabled=true;
+  callMaster(txt,false).finally(()=>{
+    document.getElementById('sendbtn').disabled=false;
+  });
 }
 
 async function callMaster(action,isIntro){
   const th=document.getElementById('thinking');
   th.classList.add('show');
   try{
-    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Giocatore: ${G.myName}, Pokemon: ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi.`;
+    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Giocatore: ${G.myName}, Pokemon: ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Stanza: ${G.myRoom}. Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi tu stesso.`;
 
-    const history=G.msgs.slice(-10).map(m=>{
-      if(m.type==='master')return{role:'model',parts:[{text:m.text}]};
-      if(m.type==='player')return{role:'user',parts:[{text:`${m.author}: ${m.text}`}]};
-      return null;
-    }).filter(Boolean);
+    const history=G.msgs.slice(-10).filter(m=>m.type==='master'||m.type==='player').map(m=>{
+      if(m.type==='master')return`Master: ${m.text}`;
+      return`${m.author}: ${m.text}`;
+    }).join('\n');
 
-    const contents=isIntro
-      ?[{role:'user',parts:[{text:action}]}]
-      :[...history,{role:'user',parts:[{text:`${G.myName}: ${action}`}]}];
+    const prompt=isIntro?`${sys}\n\n${action}`:`${sys}\n\nStorico recente:\n${history}\n\nAzione attuale di ${G.myName}: ${action}\n\nRispondi come Master:`;
 
-    const resp=await fetch(GEMINI_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-goog-api-key':GEMINI_KEY},
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:sys}]},
-        contents,
-        generationConfig:{maxOutputTokens:500,temperature:0.8}
-      })
-    });
-    const data=await resp.json();
-    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const response=await puter.ai.chat(prompt,{model:'gpt-4o-mini'});
+    const text=typeof response==='string'?response:(response?.message?.content||response?.content||'');
     if(text)await pushMsg({type:'master',author:'MASTER',text});
-    else{
-      console.error('Gemini error:',data);
-      await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
-    }
+    else await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
   }catch(e){
     console.error('Master error:',e);
-    await pushMsg({type:'system',author:'SISTEMA',text:'Connessione al Master interrotta. Riprova.'});
+    await pushMsg({type:'system',author:'SISTEMA',text:'Master non disponibile. Assicurati di essere connesso a Puter.'});
   }
   th.classList.remove('show');
 }
@@ -397,8 +448,7 @@ function renderFeed(msgs){
   msgs.forEach(m=>{
     const div=document.createElement('div');div.className='msg';
     const ac=m.type==='master'?'var(--yl)':m.type==='player'?'var(--bdl)':'var(--gr)';
-    const al=m.type==='master'?'MASTER':m.author;
-    div.innerHTML=`<div class="mauth" style="color:${ac}">${al}</div><div class="mtxt">${esc(m.text)}</div><div class="mts">${m.ts||''}</div>${m.type==='master'?'<div class="marr">v</div>':''}`;
+    div.innerHTML=`<div class="mauth" style="color:${ac}">${m.type==='master'?'MASTER':m.author}</div><div class="mtxt">${esc(m.text)}</div><div class="mts">${m.ts||''}</div>${m.type==='master'?'<div class="marr">v</div>':''}`;
     feed.appendChild(div);
   });
   if(atBot)feed.scrollTop=feed.scrollHeight;
@@ -454,7 +504,7 @@ async function useItem(i){
   const it=G.inv[i];if(!it||it.qty<=0)return;it.qty--;
   if(it.eff==='restore'){G.poke.currentHp=Math.min(G.poke.hp,G.poke.currentHp+it.val);await window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}/poke`),{currentHp:G.poke.currentHp});}
   await pushMsg({type:'system',author:'ZAINO',text:`${G.myName} ha usato ${it.name}!`});
-  renderInv();showToast(it.name+' USATO!');
+  renderInv();saveProfile();showToast(it.name+' USATO!');
 }
 
 function addItem(){
@@ -480,11 +530,20 @@ async function rollPool(){
 
 function openHP(){G.tempHp=G.poke.currentHp;document.getElementById('hpinfo').textContent=G.poke.name+' PS: '+G.poke.currentHp+'/'+G.poke.hp;document.getElementById('hpval').textContent=G.tempHp;document.getElementById('hpovl').classList.add('show');}
 function chHP(d){G.tempHp=Math.max(0,Math.min(G.poke.hp,G.tempHp+d));document.getElementById('hpval').textContent=G.tempHp;}
-async function saveHP(){G.poke.currentHp=G.tempHp;await window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}/poke`),{currentHp:G.tempHp});closeHP();showToast('PS AGGIORNATI!');}
+async function saveHP(){G.poke.currentHp=G.tempHp;await window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}/poke`),{currentHp:G.tempHp});closeHP();saveProfile();showToast('PS AGGIORNATI!');}
 function closeHP(){document.getElementById('hpovl').classList.remove('show');}
 function setTab(id,el){document.querySelectorAll('.tcon').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.getElementById('t-'+id).classList.add('on');el.classList.add('on');}
 function copyRoom(){navigator.clipboard.writeText(G.myRoom).catch(()=>{});showToast('CODICE COPIATO!');}
-function leave(){if(!confirm('VUOI USCIRE?'))return;clearInterval(G.hb);G.unsub.forEach(u=>u&&u());document.getElementById('game').style.display='none';document.getElementById('lobby').style.display='flex';document.getElementById('s1').style.display='flex';document.getElementById('s2').style.display='none';document.getElementById('s3').style.display='none';}
+function leave(){
+  if(!confirm('VUOI USCIRE? IL PROFILO E SALVATO AUTOMATICAMENTE.'))return;
+  clearInterval(G.hb);G.unsub.forEach(u=>u&&u());
+  saveProfile();
+  document.getElementById('game').style.display='none';
+  document.getElementById('lobby').style.display='flex';
+  document.getElementById('s1').style.display='flex';
+  document.getElementById('s2').style.display='none';
+  document.getElementById('s3').style.display='none';
+}
 function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',3000);}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
