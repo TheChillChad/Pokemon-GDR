@@ -105,7 +105,7 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
 <body>
 <div id="lobby">
   <div style="font-size:9px;color:var(--yl);letter-spacing:2px;text-align:center">POKEMON GDR</div>
-  <div style="font-size:6px;color:var(--gr);text-align:center;margin-bottom:.3rem">AI MASTER INTEGRATO</div>
+  <div style="font-size:6px;color:var(--gr);text-align:center;margin-bottom:.3rem">AI MASTER — GEMINI</div>
   <div class="lcard" id="s1">
     <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
     <h2>ENTRA O CREA STANZA</h2>
@@ -151,7 +151,7 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
   </div>
   <div class="gbody">
     <div class="fcol">
-      <div class="fhdr">NARRAZIONE - AI MASTER</div>
+      <div class="fhdr">NARRAZIONE — AI MASTER</div>
       <div class="feed" id="feed"></div>
       <div class="thinking" id="thinking">... MASTER STA PENSANDO ...</div>
       <div class="abar">
@@ -242,10 +242,12 @@ const cfg={apiKey:"AIzaSyCW8eKl58m_jW0XIoJE68A1j0LZLUavRGI",authDomain:"pokemon-
 const app=initializeApp(cfg);
 const db=getDatabase(app);
 window._db=db;window._ref=ref;window._set=set;window._get=get;window._onValue=onValue;window._push=push;window._update=update;
-console.log("Firebase OK");
 </script>
 
 <script>
+const GEMINI_KEY='AIzaSyAb8RN6Ij6LEdL2NBratVHyZLQVqK-rUreEjITQGVlk5fjRMGeA';
+const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY;
+
 const POKES=[
   {id:1,name:'BULBASAUR',type:'Erba',types:['erba'],hp:45,atk:49,satk:65,def:49,sdef:65,spd:45,moves:['FOGLIA LAMA','ASSORBIMENTO','CRESCITA','COLPO CORPO']},
   {id:4,name:'CHARMANDER',type:'Fuoco',types:['fuoco'],hp:39,atk:52,satk:60,def:43,sdef:50,spd:65,moves:['BRACE','GRAFFIO','RUGGITO','FOCALENERGIA']},
@@ -301,14 +303,14 @@ async function enter(){
     const snap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/messages`));
     if(!snap.exists()){
       await pushMsg({type:'system',author:'SISTEMA',text:`Stanza ${G.myRoom} creata! Condividi il codice.`});
-      await callMaster(`Inizia la campagna. Dai il benvenuto a ${G.myName} con il suo ${G.poke.name}. Descrivi la scena iniziale davanti al laboratorio del Professor Oak a Biancavilla. Sii breve e chiedi cosa vuole fare.`,true);
+      await callMaster(`Inizia la campagna Pokemon GDR. Dai il benvenuto a ${G.myName} con il suo ${G.poke.name}. Descrivi la scena iniziale davanti al laboratorio del Professor Oak a Biancavilla. Sii breve (4-5 righe) e chiedi cosa vuole fare.`,true);
     }else{
       await pushMsg({type:'system',author:'SISTEMA',text:`${G.myName} e entrato con ${G.poke.name}!`});
     }
     showGame();
   }catch(e){
-    console.error('Errore enter:',e);
-    alert('Errore connessione: '+e.message);
+    console.error('Errore:',e);
+    alert('Errore: '+e.message);
   }
 }
 
@@ -353,29 +355,34 @@ async function callMaster(action,isIntro){
   const th=document.getElementById('thinking');
   th.classList.add('show');
   try{
-    const recent=G.msgs.slice(-12).map(m=>{
-      if(m.type==='master')return{role:'assistant',content:m.text};
-      if(m.type==='player')return{role:'user',content:`${m.author}: ${m.text}`};
+    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Giocatore: ${G.myName}, Pokemon: ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi.`;
+
+    const history=G.msgs.slice(-10).map(m=>{
+      if(m.type==='master')return{role:'model',parts:[{text:m.text}]};
+      if(m.type==='player')return{role:'user',parts:[{text:`${m.author}: ${m.text}`}]};
       return null;
     }).filter(Boolean);
 
-    const sys=`Sei il Master di un GdR Pokemon basato su Pokerole, in italiano.
-Giocatore: ${G.myName}, Pokemon: ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}).
-Stanza: ${G.myRoom}.
-Scrivi narrazioni brevi (4-6 righe), in italiano, stile Pokemon classico GBA.
-Termina sempre con una domanda o scelta per i giocatori.
-Se serve un tiro dado scrivi "Tira X dadi D6!" - i giocatori tirano nell'app.`;
+    const contents=isIntro
+      ?[{role:'user',parts:[{text:action}]}]
+      :[...history,{role:'user',parts:[{text:`${G.myName}: ${action}`}]}];
 
-    const msgs=isIntro?[{role:'user',content:action}]:[...recent,{role:'user',content:`${G.myName}: ${action}`}];
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch(GEMINI_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:sys,messages:msgs})
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:sys}]},
+        contents,
+        generationConfig:{maxOutputTokens:500,temperature:0.8}
+      })
     });
     const data=await resp.json();
-    const text=(data.content||[]).map(c=>c.text||'').join('');
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
     if(text)await pushMsg({type:'master',author:'MASTER',text});
-    else await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
+    else{
+      console.error('Gemini error:',data);
+      await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
+    }
   }catch(e){
     console.error('Master error:',e);
     await pushMsg({type:'system',author:'SISTEMA',text:'Connessione al Master interrotta. Riprova.'});
@@ -390,7 +397,7 @@ function renderFeed(msgs){
   msgs.forEach(m=>{
     const div=document.createElement('div');div.className='msg';
     const ac=m.type==='master'?'var(--yl)':m.type==='player'?'var(--bdl)':'var(--gr)';
-    const al=m.type==='master'?'MASTER':m.type==='player'?m.author:m.author;
+    const al=m.type==='master'?'MASTER':m.author;
     div.innerHTML=`<div class="mauth" style="color:${ac}">${al}</div><div class="mtxt">${esc(m.text)}</div><div class="mts">${m.ts||''}</div>${m.type==='master'?'<div class="marr">v</div>':''}`;
     feed.appendChild(div);
   });
@@ -421,8 +428,7 @@ function renderMoves(){
     const m=MOVES[mv]||{type:'normale',pow:40,pp:20};
     const b=document.createElement('button');b.className='mbtn';
     b.innerHTML=`${mv}<span style="font-size:4px;display:block;color:${TC[m.type]||'#a8a878'}">${m.type.toUpperCase()}</span><span style="font-size:4px;display:block;color:var(--gr)">PP${m.pp}</span>`;
-    b.onclick=()=>rollMove(mv,m);
-    g.appendChild(b);
+    b.onclick=()=>rollMove(mv,m);g.appendChild(b);
   });
 }
 
