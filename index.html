@@ -382,24 +382,27 @@ function showGame(){
 }
 
 function startListeners(){
-  if(!window._onValue||!window._db){
-    console.log('Firebase non pronto, riprovo...');
-    setTimeout(startListeners,500);return;
-  }
-  const u1=window._onValue(window._ref(window._db,`rooms/${G.myRoom}/messages`),snap=>{
-    const msgs=[];snap.forEach(c=>msgs.push(c.val()));
-    console.log('Feed aggiornato:',msgs.length,'messaggi');
-    G.msgs=msgs;renderFeed(msgs);
-  });
-  const u2=window._onValue(window._ref(window._db,`rooms/${G.myRoom}/players`),snap=>{
-    const pl={};snap.forEach(c=>{const p=c.val();if(Date.now()-p.lastSeen<60000)pl[p.id]=p;});
-    renderPlayers(pl);
-  });
-  G.hb=setInterval(()=>{
-    window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{lastSeen:Date.now()});
-    saveProfile();
-  },15000);
-  G.unsub=[u1,u2];
+  // Polling ogni 2 secondi per messaggi e giocatori
+  G.pollInterval=setInterval(async()=>{
+    if(!window._get||!window._db)return;
+    try{
+      // Messaggi
+      const snap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/messages`));
+      const msgs=[];snap.forEach(c=>msgs.push(c.val()));
+      if(msgs.length!==G.msgs.length){
+        console.log('Aggiornamento feed:',msgs.length,'messaggi');
+        G.msgs=msgs;renderFeed(msgs);
+      }
+      // Giocatori
+      const psnap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/players`));
+      const pl={};psnap.forEach(c=>{const p=c.val();if(Date.now()-p.lastSeen<60000)pl[p.id]=p;});
+      renderPlayers(pl);
+      // Heartbeat
+      window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{lastSeen:Date.now()});
+      saveProfile();
+    }catch(e){console.error('Poll error:',e);}
+  },2000);
+  G.unsub=[];
 }
 
 async function pushMsg(msg){
@@ -561,7 +564,7 @@ function setTab(id,el){document.querySelectorAll('.tcon').forEach(x=>x.classList
 function copyRoom(){navigator.clipboard.writeText(G.myRoom).catch(()=>{});showToast('CODICE COPIATO!');}
 function leave(){
   if(!confirm('VUOI USCIRE? IL PROFILO E SALVATO AUTOMATICAMENTE.'))return;
-  clearInterval(G.hb);G.unsub.forEach(u=>u&&u());
+  clearInterval(G.pollInterval);G.unsub.forEach(u=>u&&u());
   saveProfile();
   document.getElementById('game').style.display='none';
   document.getElementById('lobby').style.display='flex';
