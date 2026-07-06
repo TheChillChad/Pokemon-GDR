@@ -261,11 +261,11 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,set,get,onValue,push,update}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{getDatabase,ref,set,get,onValue,onChildAdded,push,update}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 const cfg={apiKey:"AIzaSyCW8eKl58m_jW0XIoJE68A1j0LZLUavRGI",authDomain:"pokemon-gdr.firebaseapp.com",databaseURL:"https://pokemon-gdr-default-rtdb.europe-west1.firebasedatabase.app",projectId:"pokemon-gdr",storageBucket:"pokemon-gdr.firebasestorage.app",messagingSenderId:"511509654304",appId:"1:511509654304:web:60843b05e7b50d2d010545"};
 const app=initializeApp(cfg);
 const db=getDatabase(app);
-window._db=db;window._ref=ref;window._set=set;window._get=get;window._onValue=onValue;window._push=push;window._update=update;
+window._db=db;window._ref=ref;window._set=set;window._get=get;window._onValue=onValue;window._onChildAdded=onChildAdded;window._push=push;window._update=update;
 document.getElementById('loading').style.display='none';
 document.getElementById('lobby').style.display='flex';
 // Controlla profilo salvato
@@ -388,10 +388,20 @@ function startListeners(){
     console.log('Firebase pronto, avvio listeners');
     
     const msgsRef=window._ref(window._db,`rooms/${G.myRoom}/messages`);
-    const unsub1=window._onValue(msgsRef,snap=>{
-      const msgs=[];snap.forEach(c=>msgs.push(c.val()));
-      console.log('onValue msgs:',msgs.length);
-      G.msgs=msgs;renderFeed(msgs);
+    // Carica tutti i messaggi esistenti
+    window._get(msgsRef).then(snap=>{
+      snap.forEach(c=>G.msgs.push(c.val()));
+      renderFeed(G.msgs);
+    });
+    // Ascolta nuovi messaggi in arrivo
+    const unsub1=window._onChildAdded(msgsRef,snap=>{
+      const msg=snap.val();
+      // Evita duplicati
+      if(!G.msgs.find(m=>m.id===msg.id)){
+        G.msgs.push(msg);
+        console.log('Nuovo messaggio:',msg.type,'totale:',G.msgs.length);
+        renderFeed(G.msgs);
+      }
     });
     
     const playRef=window._ref(window._db,`rooms/${G.myRoom}/players`);
