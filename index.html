@@ -191,6 +191,8 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
         <div class="tab on" onclick="setTab('mosse',this)">MOSSE</div>
         <div class="tab" onclick="setTab('dado',this)">DADO</div>
         <div class="tab" onclick="setTab('zaino',this)">ZAINO</div>
+        <div class="tab" onclick="setTab('regole',this)">REG</div>
+        <div class="tab" onclick="setTab('master',this)">GM</div>
         <div class="tab" onclick="setTab('guida',this)">?</div>
       </div>
       <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
@@ -227,6 +229,47 @@ body{font-family:var(--fn);background:var(--bg);color:var(--wh);height:100vh;dis
             </div>
           </div>
         </div>
+        <div class="tcon" id="t-regole">
+          <div class="gsec">
+            <div class="gtitle">REGOLAMENTO POKEROLE</div>
+            <div class="gtxt">Pokerole e un sistema GdR fan-made basato sui giochi Pokemon. Gratuito e scaricabile online.</div>
+          </div>
+          <div class="gsec">
+            <div class="gtitle">SITO UFFICIALE</div>
+            <div class="gtxt" style="word-break:break-all"><a href="https://www.pokeroleproject.com" target="_blank" style="color:var(--bdl)">www.pokeroleproject.com</a></div>
+          </div>
+          <div class="gsec">
+            <div class="gtitle">ATTRIBUTI ALLENATORE</div>
+            <div class="gtxt"><span class="ghl">FORZA</span>: azioni fisiche<br/><span class="ghl">DESTREZZA</span>: velocita e precisione<br/><span class="ghl">VITALITA</span>: resistenza<br/><span class="ghl">INSIGHT</span>: conoscenza Pokemon<br/><span class="ghl">FASCINO</span>: interazioni sociali<br/><span class="ghl">VOLONTA</span>: mosse potenti</div>
+          </div>
+          <div class="gsec">
+            <div class="gtitle">COME SI TIRA</div>
+            <div class="gtxt">Attributo + Abilita = numero di D6.<br/>Ogni dado che esce <span class="ghl">4 o piu</span> e un successo.<br/>Il Master stabilisce quanti successi servono.</div>
+          </div>
+          <div class="gsec">
+            <div class="gtitle">COMBATTIMENTO</div>
+            <div class="gtxt">Iniziativa: <span class="ghl">Destrezza + Allerta</span><br/>Attacco fisico: <span class="ghl">Forza + mossa</span><br/>Attacco speciale: <span class="ghl">Insight + mossa</span><br/>Difesa: <span class="ghl">Vitalita + Resistenza</span></div>
+          </div>
+        </div>
+
+        <div class="tcon" id="t-master">
+          <div style="padding:8px">
+            <div style="font-size:6px;color:var(--gr);margin-bottom:6px">ACCESSO RISERVATO AL MASTER</div>
+            <div id="gm-login" style="display:flex;flex-direction:column;gap:6px">
+              <input class="inp" id="gm-password" type="password" placeholder="Password Master..." style="font-size:6px"/>
+              <button class="btn gn" onclick="gmLogin()" style="font-size:6px">ACCEDI</button>
+              <div id="gm-err" style="font-size:5px;color:var(--rd);display:none">Password errata!</div>
+            </div>
+            <div id="gm-panel" style="display:none;flex-direction:column;gap:6px">
+              <div style="font-size:6px;color:var(--gn);margin-bottom:4px">ACCESSO MASTER ATTIVO</div>
+              <div style="font-size:5px;color:var(--gr);margin-bottom:4px">Istruzioni private per l'AI (non visibili ai giocatori)</div>
+              <textarea id="gm-instructions" style="background:var(--pan);border:2px solid var(--bd);color:var(--wh);font-family:var(--fn);font-size:6px;padding:6px;width:100%;height:80px;resize:none;outline:none" placeholder="Es: Il villain e Giovanni. La regione e basata sul Giappone medievale. Tono oscuro..."></textarea>
+              <button class="btn gn" onclick="gmSaveInstructions()" style="font-size:6px">SALVA ISTRUZIONI</button>
+              <div id="gm-saved" style="font-size:5px;color:var(--gn);display:none">Salvato!</div>
+            </div>
+          </div>
+        </div>
+
         <div class="tcon" id="t-guida">
           <div class="gsec"><div class="gtitle">COME SI GIOCA</div><div class="gtxt">Scrivi la tua azione e premi INVIA. L'<span class="ghl">AI MASTER</span> risponde per tutti in tempo reale.</div></div>
           <div class="gsec"><div class="gtitle">DADI POKEROLE</div><div class="gtxt">Pool di <span class="ghl">D6</span>. Ogni dado <span class="ghl">4 o piu</span> = 1 SUCCESSO. 0 successi = fallimento.</div></div>
@@ -462,7 +505,7 @@ async function callMaster(action,isIntro){
   const th=document.getElementById('thinking');
   th.classList.add('show');
   try{
-    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Il giocatore si chiama ${G.myName} e ha come Pokemon ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Usa solo luoghi del mondo Pokemon (Biancavilla, Palcelverde, ecc). Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi tu stesso.`;
+    const gmExtra=gmInstructions?`\n\nISTRUZIONI SPECIALI DEL MASTER:\n${gmInstructions}`:'';\n    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Il giocatore si chiama ${G.myName} e ha come Pokemon ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Usa solo luoghi del mondo Pokemon (Biancavilla, Palcelverde, ecc). Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi tu stesso.${gmExtra}`;
 
     const history=G.msgs.slice(-10).filter(m=>m.type==='master'||m.type==='player').map(m=>{
       if(m.type==='master')return`Master: ${m.text}`;
@@ -579,6 +622,30 @@ function chHP(d){G.tempHp=Math.max(0,Math.min(G.poke.hp,G.tempHp+d));document.ge
 async function saveHP(){G.poke.currentHp=G.tempHp;await window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}/poke`),{currentHp:G.tempHp});closeHP();saveProfile();showToast('PS AGGIORNATI!');}
 function closeHP(){document.getElementById('hpovl').classList.remove('show');}
 function setTab(id,el){document.querySelectorAll('.tcon').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.getElementById('t-'+id).classList.add('on');el.classList.add('on');}
+
+const GM_PASSWORD='master2025';
+let gmInstructions='';
+
+function gmLogin(){
+  const pw=document.getElementById('gm-password').value;
+  if(pw===GM_PASSWORD){
+    document.getElementById('gm-login').style.display='none';
+    document.getElementById('gm-panel').style.display='flex';
+    // Carica istruzioni salvate
+    const saved=localStorage.getItem('gm_instructions_'+G.myRoom);
+    if(saved){document.getElementById('gm-instructions').value=saved;gmInstructions=saved;}
+  }else{
+    document.getElementById('gm-err').style.display='block';
+    setTimeout(()=>document.getElementById('gm-err').style.display='none',2000);
+  }
+}
+
+function gmSaveInstructions(){
+  gmInstructions=document.getElementById('gm-instructions').value;
+  localStorage.setItem('gm_instructions_'+G.myRoom,gmInstructions);
+  document.getElementById('gm-saved').style.display='block';
+  setTimeout(()=>document.getElementById('gm-saved').style.display='none',2000);
+}
 function copyRoom(){navigator.clipboard.writeText(G.myRoom).catch(()=>{});showToast('CODICE COPIATO!');}
 function leave(){
   if(!confirm('VUOI USCIRE? IL PROFILO E SALVATO AUTOMATICAMENTE.'))return;
