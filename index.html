@@ -403,9 +403,24 @@ function startListeners(){
 }
 
 async function pushMsg(msg){
+  // Aspetta che Firebase sia pronto
+  let tries=0;
+  while((!window._push||!window._db)&&tries<20){
+    await new Promise(r=>setTimeout(r,200));
+    tries++;
+  }
+  if(!window._push||!window._db){
+    console.error('Firebase non disponibile!');
+    return;
+  }
   msg.ts=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
   msg.id=Date.now()+Math.random();
-  await window._push(window._ref(window._db,`rooms/${G.myRoom}/messages`),msg);
+  try{
+    await window._push(window._ref(window._db,`rooms/${G.myRoom}/messages`),msg);
+    console.log('pushMsg OK:',msg.type);
+  }catch(e){
+    console.error('pushMsg ERRORE:',e);
+  }
 }
 
 async function sendAction(){
