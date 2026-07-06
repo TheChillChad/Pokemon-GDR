@@ -389,10 +389,8 @@ function startListeners(){
       // Messaggi
       const snap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/messages`));
       const msgs=[];snap.forEach(c=>msgs.push(c.val()));
-      if(msgs.length!==G.msgs.length){
-        console.log('Aggiornamento feed:',msgs.length,'messaggi');
-        G.msgs=msgs;renderFeed(msgs);
-      }
+      console.log('Poll - messaggi trovati:',msgs.length);
+      G.msgs=msgs;renderFeed(msgs);
       // Giocatori
       const psnap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/players`));
       const pl={};psnap.forEach(c=>{const p=c.val();if(Date.now()-p.lastSeen<60000)pl[p.id]=p;});
