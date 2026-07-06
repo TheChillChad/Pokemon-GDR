@@ -382,25 +382,35 @@ function showGame(){
 }
 
 function startListeners(){
-  // Polling ogni 2 secondi per messaggi e giocatori
-  G.pollInterval=setInterval(async()=>{
-    if(!window._get||!window._db)return;
-    try{
-      // Messaggi
-      const snap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/messages`));
+  // Aspetta Firebase poi usa onValue
+  function setup(){
+    if(!window._onValue||!window._db){setTimeout(setup,300);return;}
+    console.log('Firebase pronto, avvio listeners');
+    
+    const msgsRef=window._ref(window._db,`rooms/${G.myRoom}/messages`);
+    const unsub1=window._onValue(msgsRef,snap=>{
       const msgs=[];snap.forEach(c=>msgs.push(c.val()));
-      console.log('Poll - messaggi trovati:',msgs.length);
+      console.log('onValue msgs:',msgs.length);
       G.msgs=msgs;renderFeed(msgs);
-      // Giocatori
-      const psnap=await window._get(window._ref(window._db,`rooms/${G.myRoom}/players`));
-      const pl={};psnap.forEach(c=>{const p=c.val();if(Date.now()-p.lastSeen<60000)pl[p.id]=p;});
+    });
+    
+    const playRef=window._ref(window._db,`rooms/${G.myRoom}/players`);
+    const unsub2=window._onValue(playRef,snap=>{
+      const pl={};snap.forEach(c=>{const p=c.val();if(Date.now()-p.lastSeen<60000)pl[p.id]=p;});
       renderPlayers(pl);
-      // Heartbeat
-      window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{lastSeen:Date.now()});
-      saveProfile();
-    }catch(e){console.error('Poll error:',e);}
-  },2000);
-  G.unsub=[];
+    });
+    
+    G.unsub=[unsub1,unsub2];
+    
+    // Heartbeat separato
+    G.pollInterval=setInterval(()=>{
+      if(window._update&&window._db){
+        window._update(window._ref(window._db,`rooms/${G.myRoom}/players/${G.myId}`),{lastSeen:Date.now()});
+        saveProfile();
+      }
+    },15000);
+  }
+  setup();
 }
 
 async function pushMsg(msg){
