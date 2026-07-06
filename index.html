@@ -382,8 +382,13 @@ function showGame(){
 }
 
 function startListeners(){
+  if(!window._onValue||!window._db){
+    console.log('Firebase non pronto, riprovo...');
+    setTimeout(startListeners,500);return;
+  }
   const u1=window._onValue(window._ref(window._db,`rooms/${G.myRoom}/messages`),snap=>{
     const msgs=[];snap.forEach(c=>msgs.push(c.val()));
+    console.log('Feed aggiornato:',msgs.length,'messaggi');
     G.msgs=msgs;renderFeed(msgs);
   });
   const u2=window._onValue(window._ref(window._db,`rooms/${G.myRoom}/players`),snap=>{
