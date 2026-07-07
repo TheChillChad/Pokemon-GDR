@@ -511,8 +511,7 @@ async function callMaster(action,isIntro){
     const history=G.msgs.slice(-10).filter(m=>m.type==='master'||m.type==='player').map(m=>{
       if(m.type==='master')return 'Master: '+m.text;
       return m.author+': '+m.text;
-    }).join('
-');
+    }).join('\n');
 
     const prompt=isIntro?(sys+'
 
