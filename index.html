@@ -540,6 +540,19 @@ async function rollMove(name,m){
   await pushMsg({type:'system',author:'MOSSA',text:`${G.myName} usa ${name}! Dadi:[${res.join(' ')}] ${succ} successo/i`});
 }
 
+function renderMoves(){
+  const pk=G.poke;
+  document.getElementById('mhdr').textContent=pk.name+' - MOSSE';
+  const g=document.getElementById('mgrid');g.innerHTML='';
+  const TC={fuoco:'#f87848',acqua:'#78a8f8',erba:'#78c850',elettro:'#f8d030',normale:'#a8a878',psico:'#f85888',roccia:'#b8a038',spettro:'#705898',lotta:'#c03028'};
+  (pk.moves||[]).forEach(mv=>{
+    const m=MOVES[mv]||{type:'normale',pow:40,pp:20};
+    const b=document.createElement('button');b.className='mbtn';
+    b.innerHTML=mv+'<span style="font-size:4px;display:block;color:'+(TC[m.type]||'#a8a878')+'">'+m.type.toUpperCase()+'</span><span style="font-size:4px;display:block;color:var(--gr)">PP'+m.pp+'</span>';
+    b.onclick=()=>rollMove(mv,m);g.appendChild(b);
+  });
+}
+
 function renderInv(){
   const l=document.getElementById('invlist');l.innerHTML='';
   G.inv.forEach((it,i)=>{
