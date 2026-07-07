@@ -505,71 +505,45 @@ async function callMaster(action,isIntro){
   const th=document.getElementById('thinking');
   th.classList.add('show');
   try{
-    const gmExtra=gmInstructions?`\n\nISTRUZIONI SPECIALI DEL MASTER:\n${gmInstructions}`:'';\n    const sys=`Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Il giocatore si chiama ${G.myName} e ha come Pokemon ${G.poke.name} (PS: ${G.poke.currentHp}/${G.poke.hp}, Tipo: ${G.poke.type}). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Usa solo luoghi del mondo Pokemon (Biancavilla, Palcelverde, ecc). Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi "Tira X dadi D6!" - il giocatore tira nell'app. Non inventare risultati dei dadi tu stesso.${gmExtra}`;
+    const gmExtra=gmInstructions?('
+
+ISTRUZIONI SPECIALI DEL MASTER:
+'+gmInstructions):'';
+    const sys='Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Il giocatore si chiama '+G.myName+' e ha come Pokemon '+G.poke.name+' (PS: '+G.poke.currentHp+'/'+G.poke.hp+', Tipo: '+G.poke.type+'). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Usa solo luoghi del mondo Pokemon (Biancavilla, Palcelverde, ecc). Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi Tira X dadi D6 - il giocatore tira nell app. Non inventare risultati dei dadi tu stesso.'+gmExtra;
 
     const history=G.msgs.slice(-10).filter(m=>m.type==='master'||m.type==='player').map(m=>{
-      if(m.type==='master')return`Master: ${m.text}`;
-      return`${m.author}: ${m.text}`;
-    }).join('\n');
+      if(m.type==='master')return 'Master: '+m.text;
+      return m.author+': '+m.text;
+    }).join('
+');
 
-    const prompt=isIntro?`${sys}\n\n${action}`:`${sys}\n\nStorico recente:\n${history}\n\nAzione attuale di ${G.myName}: ${action}\n\nRispondi come Master:`;
+    const prompt=isIntro?(sys+'
+
+'+action):(sys+'
+
+Storico recente:
+'+history+'
+
+Azione attuale di '+G.myName+': '+action+'
+
+Rispondi come Master:');
 
     const response=await puter.ai.chat(prompt,{model:'gpt-4o-mini'});
     const text=typeof response==='string'?response:(response?.message?.content||response?.choices?.[0]?.message?.content||response?.content||'');
-    console.log('Text ricevuto:', text?.slice(0,50));
+    console.log('Text ricevuto:',text?.slice(0,50));
     if(text){
       await pushMsg({type:'master',author:'MASTER',text});
       console.log('Messaggio salvato su Firebase!');
-    } else {
+    }else{
       await pushMsg({type:'system',author:'SISTEMA',text:'Errore dal Master. Riprova.'});
     }
   }catch(e){
     console.error('Master error:',e);
-    await pushMsg({type:'system',author:'SISTEMA',text:'Master non disponibile. Assicurati di essere connesso a Puter.'});
+    await pushMsg({type:'system',author:'SISTEMA',text:'Connessione al Master interrotta. Riprova.'});
   }
   th.classList.remove('show');
 }
 
-function renderFeed(msgs){
-  const feed=document.getElementById('feed');
-  const atBot=feed.scrollTop+feed.clientHeight>=feed.scrollHeight-30;
-  feed.innerHTML='';
-  msgs.forEach(m=>{
-    const div=document.createElement('div');div.className='msg';
-    const ac=m.type==='master'?'var(--yl)':m.type==='player'?'var(--bdl)':'var(--gr)';
-    div.innerHTML=`<div class="mauth" style="color:${ac}">${m.type==='master'?'MASTER':m.author}</div><div class="mtxt">${esc(m.text)}</div><div class="mts">${m.ts||''}</div>${m.type==='master'?'<div class="marr">v</div>':''}`;
-    feed.appendChild(div);
-  });
-  if(atBot)feed.scrollTop=feed.scrollHeight;
-}
-
-function renderPlayers(pl){
-  const list=document.getElementById('plist');
-  const cnt=Object.keys(pl).length;
-  document.getElementById('pcnt').textContent=cnt+'/6';
-  document.getElementById('ocnt').textContent=cnt+' ONLINE';
-  list.innerHTML='';
-  Object.values(pl).forEach(p=>{
-    const isMe=p.id===G.myId;const pk=p.poke;
-    const pct=Math.round((pk.currentHp/pk.hp)*100);
-    const hc=pct>50?'var(--gn)':pct>20?'var(--gm)':'var(--rd)';
-    const d=document.createElement('div');d.className='pcard';
-    d.innerHTML=`<div class="pavrow"><div class="pav" style="background:${p.avatarColor||'#4888c8'}">${p.name[0]}</div><div><div class="pnm">${esc(p.name)}${isMe?'<span class="ytag">TU</span>':''}</div><div class="pcls">${p.cls||''}</div></div></div><div class="pkrow"><div class="spbox"><img src="${SPR(pk.id)}" alt="${pk.name}"/></div><div class="pki"><div class="pkn">${pk.name}</div><div><span class="tbdg t-${pk.types?pk.types[0]:'normale'}">${pk.type}</span></div><div class="hplr"><span class="hl">PS</span><span class="hv">${pk.currentHp}/${pk.hp}</span></div><div class="hptrk"><div class="hpfil" style="width:${pct}%;background:${hc}"></div></div></div></div>${isMe?'<button class="btn" style="width:100%;margin-top:4px;font-size:5px" onclick="openHP()">MODIFICA PS</button>':''}`;
-    list.appendChild(d);
-  });
-}
-
-function renderMoves(){
-  const pk=G.poke;
-  document.getElementById('mhdr').textContent=pk.name+' - MOSSE';
-  const g=document.getElementById('mgrid');g.innerHTML='';
-  (pk.moves||[]).forEach(mv=>{
-    const m=MOVES[mv]||{type:'normale',pow:40,pp:20};
-    const b=document.createElement('button');b.className='mbtn';
-    b.innerHTML=`${mv}<span style="font-size:4px;display:block;color:${TC[m.type]||'#a8a878'}">${m.type.toUpperCase()}</span><span style="font-size:4px;display:block;color:var(--gr)">PP${m.pp}</span>`;
-    b.onclick=()=>rollMove(mv,m);g.appendChild(b);
-  });
-}
 
 async function rollMove(name,m){
   const dice=m.pow>=80?3:m.pow>=50?2:m.pow===0?1:2;
