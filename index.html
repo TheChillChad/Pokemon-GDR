@@ -505,10 +505,7 @@ async function callMaster(action,isIntro){
   const th=document.getElementById('thinking');
   th.classList.add('show');
   try{
-    const gmExtra=gmInstructions?('
-
-ISTRUZIONI SPECIALI DEL MASTER:
-'+gmInstructions):'';
+    const gmExtra=gmInstructions?(String.fromCharCode(10,10)+'ISTRUZIONI SPECIALI DEL MASTER:'+String.fromCharCode(10)+gmInstructions):'';
     const sys='Sei il Master di un GDR Pokemon basato su Pokerole, in italiano. Il giocatore si chiama '+G.myName+' e ha come Pokemon '+G.poke.name+' (PS: '+G.poke.currentHp+'/'+G.poke.hp+', Tipo: '+G.poke.type+'). Scrivi narrazioni brevi (4-6 righe), coinvolgenti, stile Pokemon classico GBA. Usa solo luoghi del mondo Pokemon (Biancavilla, Palcelverde, ecc). Termina sempre con una domanda o scelta per il giocatore. Se serve un tiro dado scrivi Tira X dadi D6 - il giocatore tira nell app. Non inventare risultati dei dadi tu stesso.'+gmExtra;
 
     const history=G.msgs.slice(-10).filter(m=>m.type==='master'||m.type==='player').map(m=>{
