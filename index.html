@@ -513,16 +513,7 @@ async function callMaster(action,isIntro){
       return m.author+': '+m.text;
     }).join('\n');
 
-    const prompt=isIntro?(sys+'
-
-'+action):(sys+'
-
-Storico recente:
-'+history+'
-
-Azione attuale di '+G.myName+': '+action+'
-
-Rispondi come Master:');
+    const prompt=isIntro?(sys+'\n\n'+action):(sys+'\n\nStorico recente:\n'+history+'\n\nAzione attuale di '+G.myName+': '+action+'\n\nRispondi come Master:');
 
     const response=await puter.ai.chat(prompt,{model:'gpt-4o-mini'});
     const text=typeof response==='string'?response:(response?.message?.content||response?.choices?.[0]?.message?.content||response?.content||'');
