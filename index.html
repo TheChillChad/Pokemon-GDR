@@ -540,6 +540,36 @@ async function rollMove(name,m){
   await pushMsg({type:'system',author:'MOSSA',text:`${G.myName} usa ${name}! Dadi:[${res.join(' ')}] ${succ} successo/i`});
 }
 
+function renderFeed(msgs){
+  const feed=document.getElementById('feed');
+  const atBot=feed.scrollTop+feed.clientHeight>=feed.scrollHeight-30;
+  feed.innerHTML='';
+  msgs.forEach(m=>{
+    const div=document.createElement('div');div.className='msg';
+    const ac=m.type==='master'?'var(--yl)':m.type==='player'?'var(--bdl)':'var(--gr)';
+    div.innerHTML='<div class="mauth" style="color:'+ac+'">'+(m.type==='master'?'MASTER':m.author)+'</div><div class="mtxt">'+esc(m.text)+'</div><div class="mts">'+(m.ts||'')+'</div>'+(m.type==='master'?'<div class="marr">v</div>':'');
+    feed.appendChild(div);
+  });
+  if(atBot)feed.scrollTop=feed.scrollHeight;
+}
+
+function renderPlayers(pl){
+  const list=document.getElementById('plist');
+  const cnt=Object.keys(pl).length;
+  document.getElementById('pcnt').textContent=cnt+'/6';
+  document.getElementById('ocnt').textContent=cnt+' ONLINE';
+  list.innerHTML='';
+  const SPR=id=>'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'+id+'.png';
+  Object.values(pl).forEach(p=>{
+    const isMe=p.id===G.myId;const pk=p.poke;
+    const pct=Math.round((pk.currentHp/pk.hp)*100);
+    const hc=pct>50?'var(--gn)':pct>20?'var(--gm)':'var(--rd)';
+    const d=document.createElement('div');d.className='pcard';
+    d.innerHTML='<div class="pavrow"><div class="pav" style="background:'+(p.avatarColor||'#4888c8')+'">'+p.name[0]+'</div><div><div class="pnm">'+esc(p.name)+(isMe?'<span class="ytag">TU</span>':'')+'</div><div class="pcls">'+(p.cls||'')+'</div></div></div><div class="pkrow"><div class="spbox"><img src="'+SPR(pk.id)+'" alt="'+pk.name+'"/></div><div class="pki"><div class="pkn">'+pk.name+'</div><div><span class="tbdg t-'+(pk.types?pk.types[0]:'normale')+'">'+pk.type+'</span></div><div class="hplr"><span class="hl">PS</span><span class="hv">'+pk.currentHp+'/'+pk.hp+'</span></div><div class="hptrk"><div class="hpfil" style="width:'+pct+'%;background:'+hc+'"></div></div></div></div>'+(isMe?'<button class="btn" style="width:100%;margin-top:4px;font-size:5px" onclick="openHP()">MODIFICA PS</button>':'');
+    list.appendChild(d);
+  });
+}
+
 function renderMoves(){
   const pk=G.poke;
   document.getElementById('mhdr').textContent=pk.name+' - MOSSE';
